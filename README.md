@@ -1,3 +1,7 @@
+<p align="center">
+<img alt="Concord Logo" src="logo.png" width="120" height="120"/>
+</p>
+
 # Concord
 
 ## 📜 Sobre o Projeto
