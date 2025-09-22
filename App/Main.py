@@ -5,6 +5,7 @@ import json
 import Voip
 import Discovery
 import Api
+import Settings
 import os
 import uuid
 import socket
@@ -17,9 +18,47 @@ import time
 Main sem ZeroTier: Descoberta via broadcast em todas as redes.
 """
 
+# Inicializar configurações
+settings = Settings.SettingsManager()
+
+# Configurar username se não existir
+username = settings.get_username()
+if not username:
+    print("Primeira execução - configure seu username:")
+    username = input("Username: ").strip() or "User"
+    settings.set_username(username)
+
+# Configurar dispositivos de áudio se não existirem
+audio_devices = settings.get_audio_devices()
+if audio_devices["input"] is None or audio_devices["output"] is None:
+    print("Configurando dispositivos de áudio...")
+    input_devices = settings.get_input_devices()
+    output_devices = settings.get_output_devices()
+    
+    print("Dispositivos de entrada disponíveis:")
+    for i, dev in enumerate(input_devices):
+        print(f"{i}) {dev['name']}")
+    try:
+        input_idx = int(input("Selecione dispositivo de entrada (número): "))
+        input_device = input_devices[input_idx]["index"]
+    except (ValueError, IndexError):
+        input_device = None
+    
+    print("Dispositivos de saída disponíveis:")
+    for i, dev in enumerate(output_devices):
+        print(f"{i}) {dev['name']}")
+    try:
+        output_idx = int(input("Selecione dispositivo de saída (número): "))
+        output_device = output_devices[output_idx]["index"]
+    except (ValueError, IndexError):
+        output_device = None
+    
+    settings.set_audio_devices(input_device, output_device)
+    audio_devices = settings.get_audio_devices()
+
 # Descoberta de peers via broadcast multi-interface e negociação de portas
 self_id = str(uuid.uuid4())
-discovery = Discovery.DiscoveryService(self_id=self_id, display_name="Concord")
+discovery = Discovery.DiscoveryService(self_id=self_id, display_name="Concord", username=username)
 control = Discovery.ControlServer(control_port=38020)
 discovery.start()
 control.start()
@@ -46,7 +85,14 @@ def api_start_call(ip, ctrl_port):
     result = Discovery.initiate_call(ip, ctrl_port)
     if result is None:
         return False, "Peer rejected or no answer"
-    room = Voip.VoipRoom(LOCAL_IP=result['local_ip'], LOCAL_PORT=result['local_media_port'], REMOTE_IP=ip, REMOTE_PORT=result['remote_media_port'])
+    room = Voip.VoipRoom(
+        LOCAL_IP=result['local_ip'], 
+        LOCAL_PORT=result['local_media_port'], 
+        REMOTE_IP=ip, 
+        REMOTE_PORT=result['remote_media_port'],
+        input_device=audio_devices["input"],
+        output_device=audio_devices["output"]
+    )
     room.start()
     current_call["room"] = room
     return True, {"remote_ip": ip, "local_ip": result['local_ip']}
@@ -59,7 +105,14 @@ def api_accept():
     accepted = control.accept_pending()
     if not accepted:
         return False, "No pending"
-    room = Voip.VoipRoom(LOCAL_IP=accepted['local_ip'], LOCAL_PORT=accepted['my_media_port'], REMOTE_IP=accepted['peer_ip'], REMOTE_PORT=accepted['peer_media_port'])
+    room = Voip.VoipRoom(
+        LOCAL_IP=accepted['local_ip'], 
+        LOCAL_PORT=accepted['my_media_port'], 
+        REMOTE_IP=accepted['peer_ip'], 
+        REMOTE_PORT=accepted['peer_media_port'],
+        input_device=audio_devices["input"],
+        output_device=audio_devices["output"]
+    )
     room.start()
     current_call["room"] = room
     return True, {"remote_ip": accepted['peer_ip'], "local_ip": accepted['local_ip']}
@@ -106,6 +159,8 @@ try:
     input_buffer = ""
     last_render = 0.0
     awaiting_answer = False
+    peers = []
+    
     while True:
         now = time.time()
         if now - last_render >= 5.0:
@@ -114,15 +169,19 @@ try:
             if peers:
                 print("Peers encontrados:")
                 for idx, p in enumerate(peers):
-                    print(f"{idx}) {p['display_name']} - {p['ip']}")
+                    username = p.get('username', p['display_name'])
+                    print(f"{idx}) {username} - {p['ip']}")
+                print("")
+                print(f"Conectar a peer (número): {input_buffer}")
             else:
                 print("Nenhum peer encontrado")
-            print("")
+            
+            # Mostrar chamada recebida independente de haver peers
             if control.pending_offer and not awaiting_answer:
                 po = control.pending_offer
+                print("")
                 print(f"Chamada recebida de {po['peer_ip']} (porta {po['peer_media_port']}). Aceitar? [Y/N]")
                 awaiting_answer = True
-            print(f"Conectar a peer (número): {input_buffer}")
             last_render = now
 
         # Non-blocking keyboard input (Windows)
@@ -133,7 +192,14 @@ try:
                     accepted = control.accept_pending()
                     awaiting_answer = False
                     if accepted:
-                        room = Voip.VoipRoom(LOCAL_IP=accepted['local_ip'], LOCAL_PORT=accepted['my_media_port'], REMOTE_IP=accepted['peer_ip'], REMOTE_PORT=accepted['peer_media_port'])
+                        room = Voip.VoipRoom(
+                            LOCAL_IP=accepted['local_ip'], 
+                            LOCAL_PORT=accepted['my_media_port'], 
+                            REMOTE_IP=accepted['peer_ip'], 
+                            REMOTE_PORT=accepted['peer_media_port'],
+                            input_device=audio_devices["input"],
+                            output_device=audio_devices["output"]
+                        )
                         room.start()
                         print("Conectado. Pressione ENTER para encerrar a chamada.")
                         input()  # aqui pode bloquear durante a chamada
@@ -147,9 +213,8 @@ try:
                 continue
 
             if ch in ('\r', '\n'):
-                if input_buffer.strip() != "":
+                if input_buffer.strip() != "" and peers:
                     try:
-                        peers = discovery.get_peers()
                         sel = int(input_buffer)
                         target = peers[sel]
                         render_header(f"Chamando {target['ip']}...")
@@ -158,7 +223,14 @@ try:
                             print("Sem resposta ou recusado pelo peer.")
                             time.sleep(1.5)
                         else:
-                            room = Voip.VoipRoom(LOCAL_IP=result['local_ip'], LOCAL_PORT=result['local_media_port'], REMOTE_IP=target['ip'], REMOTE_PORT=result['remote_media_port'])
+                            room = Voip.VoipRoom(
+                                LOCAL_IP=result['local_ip'], 
+                                LOCAL_PORT=result['local_media_port'], 
+                                REMOTE_IP=target['ip'], 
+                                REMOTE_PORT=result['remote_media_port'],
+                                input_device=audio_devices["input"],
+                                output_device=audio_devices["output"]
+                            )
                             room.start()
                             print("Conectado. Pressione ENTER para encerrar a chamada.")
                             input()

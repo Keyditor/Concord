@@ -14,7 +14,7 @@ class PeerRegistry:
 		self._peers = {}
 		self._lock = threading.Lock()
 
-	def upsert_peer(self, peer_id, ip, control_port, display_name):
+	def upsert_peer(self, peer_id, ip, control_port, display_name, username=None):
 		if peer_id == self.self_id:
 			return
 		with self._lock:
@@ -23,6 +23,7 @@ class PeerRegistry:
 				"ip": ip,
 				"control_port": control_port,
 				"display_name": display_name,
+				"username": username or display_name,
 				"last_seen": time.time(),
 			}
 
@@ -74,9 +75,10 @@ def select_local_ip_for_peer(peer_ip):
 
 class DiscoveryService:
 
-	def __init__(self, self_id, display_name="Concord", broadcast_port=37020, control_port=38020, beacon_interval=1.0):
+	def __init__(self, self_id, display_name="Concord", username=None, broadcast_port=37020, control_port=38020, beacon_interval=1.0):
 		self.self_id = self_id
 		self.display_name = display_name
+		self.username = username or display_name
 		self.broadcast_port = broadcast_port
 		self.control_port = control_port
 		self.beacon_interval = beacon_interval
@@ -111,6 +113,7 @@ class DiscoveryService:
 			"type": "BEACON",
 			"id": self.self_id,
 			"name": self.display_name,
+			"username": self.username,
 			"control_port": self.control_port,
 			"nets": [i["network"] for i in get_local_ipv4_interfaces()],
 		}
@@ -144,7 +147,7 @@ class DiscoveryService:
 							if net in my_nets:
 								shared = net
 								break
-						self.registry.upsert_peer(msg["id"], peer_ip, int(msg["control_port"]), msg.get("name", "Concord"))
+						self.registry.upsert_peer(msg["id"], peer_ip, int(msg["control_port"]), msg.get("name", "Concord"), msg.get("username"))
 						# annotate grouping by network (optional: stored externally)
 				except Exception:
 					pass
@@ -202,6 +205,9 @@ class ControlServer:
 							"peer_media_port": int(msg["caller_media_port"]),
 							"local_ip": local_ip,
 						}
+						# Enviar resposta de "RINGING" para indicar que recebeu a chamada
+						ringing_response = {"type": "RINGING"}
+						sock.sendto(json.dumps(ringing_response).encode("utf-8"), addr)
 				except Exception:
 					pass
 			except Exception:
@@ -243,7 +249,7 @@ class ControlServer:
 		return True
 
 
-def initiate_call(peer_ip, peer_control_port, timeout_seconds=5.0):
+def initiate_call(peer_ip, peer_control_port, timeout_seconds=10.0):
 	ctrl_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	ctrl_sock.settimeout(1.0)
 	local_ip = select_local_ip_for_peer(peer_ip)
@@ -254,12 +260,23 @@ def initiate_call(peer_ip, peer_control_port, timeout_seconds=5.0):
 	}
 	deadline = time.time() + timeout_seconds
 	response = None
+	ringing_received = False
+	last_send = 0
+	
 	while time.time() < deadline and response is None:
 		try:
-			ctrl_sock.sendto(json.dumps(offer).encode("utf-8"), (peer_ip, peer_control_port))
+			# Enviar oferta apenas uma vez por segundo
+			if not ringing_received or (time.time() - last_send) > 1.0:
+				ctrl_sock.sendto(json.dumps(offer).encode("utf-8"), (peer_ip, peer_control_port))
+				last_send = time.time()
+			
 			data, _ = ctrl_sock.recvfrom(2048)
 			msg = json.loads(data.decode("utf-8"))
-			if msg.get("type") == "ACCEPT" and "callee_media_port" in msg:
+			
+			if msg.get("type") == "RINGING":
+				ringing_received = True
+				print("Chamando... aguardando resposta...")
+			elif msg.get("type") == "ACCEPT" and "callee_media_port" in msg:
 				response = int(msg["callee_media_port"])
 			elif msg.get("type") == "REJECT":
 				ctrl_sock.close()
