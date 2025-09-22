@@ -3,16 +3,181 @@
 
 import json
 import Voip
-import Cliente
+import Discovery
+import Api
 import os
+import uuid
+import socket
+import platform
+import msvcrt
+import time
 
 
-#Configuração da rede ZeroTier
-ztMananger = Cliente.ZeroTierManager("8056c2e21ca948e3")
-ztMananger.join_network()
-clientIP = ztMananger.get_ip()
-ztMananger.leave_network()
+"""
+Main sem ZeroTier: Descoberta via broadcast em todas as redes.
+"""
 
-room = Voip.VoipRoom(LOCAL_IP=clientIP,REMOTE_IP="x.x.x.x")
-room.start()
+# Descoberta de peers via broadcast multi-interface e negociação de portas
+self_id = str(uuid.uuid4())
+discovery = Discovery.DiscoveryService(self_id=self_id, display_name="Concord")
+control = Discovery.ControlServer(control_port=38020)
+discovery.start()
+control.start()
+
+# Simple call manager state shared with API
+current_call = {"room": None}
+
+def api_status():
+    peers = discovery.get_peers()
+    return {
+        "host": hostname,
+        "interfaces": Discovery.get_local_ipv4_interfaces(),
+        "peers": peers,
+        "pending": bool(control.pending_offer),
+        "in_call": current_call["room"] is not None,
+    }
+
+def api_peers():
+    return discovery.get_peers()
+
+def api_start_call(ip, ctrl_port):
+    if current_call["room"] is not None:
+        return False, "Already in call"
+    result = Discovery.initiate_call(ip, ctrl_port)
+    if result is None:
+        return False, "Peer rejected or no answer"
+    room = Voip.VoipRoom(LOCAL_IP=result['local_ip'], LOCAL_PORT=result['local_media_port'], REMOTE_IP=ip, REMOTE_PORT=result['remote_media_port'])
+    room.start()
+    current_call["room"] = room
+    return True, {"remote_ip": ip, "local_ip": result['local_ip']}
+
+def api_accept():
+    if current_call["room"] is not None:
+        return False, "Already in call"
+    if not control.pending_offer:
+        return False, "No pending"
+    accepted = control.accept_pending()
+    if not accepted:
+        return False, "No pending"
+    room = Voip.VoipRoom(LOCAL_IP=accepted['local_ip'], LOCAL_PORT=accepted['my_media_port'], REMOTE_IP=accepted['peer_ip'], REMOTE_PORT=accepted['peer_media_port'])
+    room.start()
+    current_call["room"] = room
+    return True, {"remote_ip": accepted['peer_ip'], "local_ip": accepted['local_ip']}
+
+def api_reject():
+    return control.reject_pending()
+
+def api_hangup():
+    if current_call["room"] is None:
+        return False
+    try:
+        current_call["room"].stop()
+    finally:
+        current_call["room"] = None
+    return True
+
+api = Api.ApiServer(
+    host="127.0.0.1",
+    port=5001,
+    peers_provider=api_peers,
+    pending_provider=lambda: control.pending_offer,
+    status_provider=api_status,
+    start_call_fn=api_start_call,
+    accept_fn=api_accept,
+    reject_fn=api_reject,
+    hangup_fn=api_hangup,
+)
+api.start()
+
+hostname = platform.node()
+iface_list = Discovery.get_local_ipv4_interfaces()
+
+def render_header(status_text):
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("Concord - P2P VoIP")
+    print(f"Host: {hostname}")
+    bcasts = ", ".join([f"{i['ip']} -> {i['broadcast']} ({i['network']})" for i in iface_list])
+    print(f"Broadcasts: {bcasts}")
+    print(f"Status: {status_text}")
+    print("")
+
+try:
+    current_room = None
+    input_buffer = ""
+    last_render = 0.0
+    awaiting_answer = False
+    while True:
+        now = time.time()
+        if now - last_render >= 5.0:
+            peers = discovery.get_peers()
+            render_header("Buscando peers...")
+            if peers:
+                print("Peers encontrados:")
+                for idx, p in enumerate(peers):
+                    print(f"{idx}) {p['display_name']} - {p['ip']}")
+            else:
+                print("Nenhum peer encontrado")
+            print("")
+            if control.pending_offer and not awaiting_answer:
+                po = control.pending_offer
+                print(f"Chamada recebida de {po['peer_ip']} (porta {po['peer_media_port']}). Aceitar? [Y/N]")
+                awaiting_answer = True
+            print(f"Conectar a peer (número): {input_buffer}")
+            last_render = now
+
+        # Non-blocking keyboard input (Windows)
+        if msvcrt.kbhit():
+            ch = msvcrt.getwch()
+            if awaiting_answer:
+                if ch.lower() == 'y':
+                    accepted = control.accept_pending()
+                    awaiting_answer = False
+                    if accepted:
+                        room = Voip.VoipRoom(LOCAL_IP=accepted['local_ip'], LOCAL_PORT=accepted['my_media_port'], REMOTE_IP=accepted['peer_ip'], REMOTE_PORT=accepted['peer_media_port'])
+                        room.start()
+                        print("Conectado. Pressione ENTER para encerrar a chamada.")
+                        input()  # aqui pode bloquear durante a chamada
+                        room.stop()
+                        input_buffer = ""
+                        last_render = 0
+                elif ch.lower() == 'n':
+                    control.reject_pending()
+                    awaiting_answer = False
+                    last_render = 0
+                continue
+
+            if ch in ('\r', '\n'):
+                if input_buffer.strip() != "":
+                    try:
+                        peers = discovery.get_peers()
+                        sel = int(input_buffer)
+                        target = peers[sel]
+                        render_header(f"Chamando {target['ip']}...")
+                        result = Discovery.initiate_call(target['ip'], target['control_port'])
+                        if result is None:
+                            print("Sem resposta ou recusado pelo peer.")
+                            time.sleep(1.5)
+                        else:
+                            room = Voip.VoipRoom(LOCAL_IP=result['local_ip'], LOCAL_PORT=result['local_media_port'], REMOTE_IP=target['ip'], REMOTE_PORT=result['remote_media_port'])
+                            room.start()
+                            print("Conectado. Pressione ENTER para encerrar a chamada.")
+                            input()
+                            room.stop()
+                    except (ValueError, IndexError):
+                        pass
+                input_buffer = ""
+                last_render = 0
+            elif ch == '\x08':  # backspace
+                input_buffer = input_buffer[:-1]
+                last_render = 0
+            elif ch.isdigit():
+                input_buffer += ch
+                last_render = 0
+
+        time.sleep(0.05)
+except KeyboardInterrupt:
+    pass
+finally:
+    discovery.stop()
+    control.stop()
 

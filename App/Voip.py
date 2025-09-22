@@ -1,6 +1,7 @@
 import socket
 import pyaudio
 import threading
+import select
 
 # Configurações de áudio
 CHUNK = 1024  # Tamanho do buffer
@@ -26,11 +27,15 @@ class VoipRoom:
         # Socket UDP
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((self.LOCAL_IP, self.LOCAL_PORT))
+        # timeouts curtos para permitir encerramento rápido
+        self.sock.settimeout(0.2)
 
         # Threads para enviar e receber áudio
         self.running = True
         self.send_thread = threading.Thread(target=self.send_audio)
         self.receive_thread = threading.Thread(target=self.receive_audio)
+        self.send_thread.daemon = True
+        self.receive_thread.daemon = True
 
     # Função para enviar áudio
     def send_audio(self):
@@ -51,6 +56,9 @@ class VoipRoom:
                 data, addr = self.sock.recvfrom(CHUNK * 2)  # O buffer pode ser ajustado
                 # Reproduz o áudio recebido
                 self.output_stream.write(data)
+            except socket.timeout:
+                # permite checar self.running periodicamente
+                continue
             except Exception as e:
                 print(f"Erro ao receber áudio: {e}")
 
@@ -63,8 +71,11 @@ class VoipRoom:
     # Função para parar as threads e liberar recursos
     def stop(self):
         self.running = False
-        self.send_thread.join()
-        self.receive_thread.join()
+        try:
+            self.send_thread.join(timeout=1.0)
+            self.receive_thread.join(timeout=1.0)
+        except Exception:
+            pass
         self.input_stream.close()
         self.output_stream.close()
         self.audio.terminate()
