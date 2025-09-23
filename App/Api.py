@@ -1,4 +1,5 @@
 import threading
+import logging
 from flask import Flask, request, jsonify
 
 
@@ -53,6 +54,7 @@ class ApiServer:
 				return jsonify({"error": "Missing ip"}), 400
 			ok, info = self._start_call(peer_ip, control_port)
 			if not ok:
+				logging.error("API /call failed: %s", info)
 				return jsonify({"error": info or "Call failed"}), 409
 			return jsonify(info)
 
@@ -64,6 +66,7 @@ class ApiServer:
 		def accept():
 			ok, info = self._accept()
 			if not ok:
+				logging.error("API /accept failed: %s", info)
 				return jsonify({"error": info or "No pending call"}), 409
 			return jsonify(info)
 
@@ -75,6 +78,7 @@ class ApiServer:
 		def reject():
 			ok = self._reject()
 			if not ok:
+				logging.error("API /reject failed: no pending call")
 				return jsonify({"error": "No pending call"}), 409
 			return jsonify({"ok": True})
 

@@ -1,3 +1,4 @@
 PyAudio==0.2.13
 psutil==5.9.8
 Flask==3.0.3
+pywebview==4.4.1

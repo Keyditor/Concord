@@ -1,0 +1,376 @@
+2025-09-23 12:05:54,985 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:05:54,986 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:05:55,144 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:05:55] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:05:58,373 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:05:58] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:05:58,725 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:05:58] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:05:58,797 ERROR Thread-10 (process_request_thread) Api: Exception on /user [GET]
+Traceback (most recent call last):
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Api.py", line 136, in get_user
+    return jsonify({"username": self._get_username()})
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Settings.py", line 31, in get_username
+    cursor.execute("SELECT username FROM user_settings WHERE id = 1")
+sqlite3.OperationalError: no such table: user_settings
+2025-09-23 12:05:58,823 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:05:58] "[35m[1mGET /user HTTP/1.1[0m" 500 -
+2025-09-23 12:05:59,239 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:05:59] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:06:02,979 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:02] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:07,981 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:07] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:12,990 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:12] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:17,986 INFO Thread-15 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:17] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:22,986 INFO Thread-16 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:22] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:26,687 INFO Thread-17 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:26] "OPTIONS /user HTTP/1.1" 200 -
+2025-09-23 12:06:26,692 ERROR Thread-18 (process_request_thread) Api: Exception on /user [POST]
+Traceback (most recent call last):
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Api.py", line 144, in set_user
+    ok = self._set_username(username)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Settings.py", line 40, in set_username
+    cursor.execute("SELECT id FROM user_settings WHERE id = 1")
+sqlite3.OperationalError: no such table: user_settings
+2025-09-23 12:06:26,693 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:26] "[35m[1mPOST /user HTTP/1.1[0m" 500 -
+2025-09-23 12:06:26,698 INFO Thread-19 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:26] "OPTIONS /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:06:26,703 ERROR Thread-20 (process_request_thread) Api: Exception on /audio-devices [POST]
+Traceback (most recent call last):
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Api.py", line 125, in set_devices
+    ok = self._set_devices(inp, out)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\main.py", line 207, in <lambda>
+    set_devices_fn=lambda inp, out: (settings.set_audio_devices(inp, out) or True),
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Settings.py", line 73, in set_audio_devices
+    cursor.execute("SELECT id FROM user_settings WHERE id = 1")
+sqlite3.OperationalError: no such table: user_settings
+2025-09-23 12:06:26,706 INFO Thread-20 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:26] "[35m[1mPOST /audio-devices HTTP/1.1[0m" 500 -
+2025-09-23 12:06:27,978 INFO Thread-21 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:27] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:32,979 INFO Thread-22 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:32] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:38,009 INFO Thread-23 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:38] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:42,982 INFO Thread-24 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:42] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:47,977 INFO Thread-25 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:47] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:52,980 INFO Thread-26 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:52] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:06:57,988 INFO Thread-27 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:06:57] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:07:02,989 INFO Thread-28 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:07:02] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:07:07,980 INFO Thread-29 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:07:07] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:07:13,095 INFO Thread-30 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:07:13] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:11:26,683 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:11:26,684 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:11:29,877 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:11:29,884 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:29] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:11:29,910 ERROR Thread-9 (process_request_thread) Api: Exception on /user [GET]
+Traceback (most recent call last):
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Api.py", line 136, in get_user
+    return jsonify({"username": self._get_username()})
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Settings.py", line 31, in get_username
+    cursor.execute("SELECT username FROM user_settings WHERE id = 1")
+sqlite3.OperationalError: no such table: user_settings
+2025-09-23 12:11:29,972 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:29] "[35m[1mGET /user HTTP/1.1[0m" 500 -
+2025-09-23 12:11:30,510 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:30] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:11:34,624 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:34] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:11:39,618 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:39] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:11:41,096 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:41] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:11:44,625 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:44] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:11:49,629 INFO Thread-15 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:11:49] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:12:02,954 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:12:02,955 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:12:05,719 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:12:05] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:12:05,721 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:12:05] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:12:05,738 ERROR Thread-9 (process_request_thread) Api: Exception on /user [GET]
+Traceback (most recent call last):
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Api.py", line 136, in get_user
+    return jsonify({"username": self._get_username()})
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Settings.py", line 31, in get_username
+    cursor.execute("SELECT username FROM user_settings WHERE id = 1")
+sqlite3.OperationalError: no such table: user_settings
+2025-09-23 12:12:05,839 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:12:05] "[35m[1mGET /user HTTP/1.1[0m" 500 -
+2025-09-23 12:12:06,754 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:12:06] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:12:06,965 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:12:06] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:12:10,501 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:12:10] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:16,937 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:13:16,937 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:13:19,847 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:19] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:19,850 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:19] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:13:19,894 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:19] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:13:20,479 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:20] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:13:24,773 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:24] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:29,771 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:34,771 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:34] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:37,694 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:37] "OPTIONS /user HTTP/1.1" 200 -
+2025-09-23 12:13:37,705 INFO Thread-15 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:37] "POST /user HTTP/1.1" 200 -
+2025-09-23 12:13:37,710 INFO Thread-16 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:37] "OPTIONS /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:13:37,722 INFO Thread-17 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:37] "POST /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:13:39,770 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:39] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:44,769 INFO Thread-19 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:44] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:49,779 INFO Thread-20 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:49] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:54,769 INFO Thread-21 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:54] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:13:59,770 INFO Thread-22 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:13:59] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:04,778 INFO Thread-23 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:04] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:09,778 INFO Thread-24 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:09] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:14,836 INFO Thread-25 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:14] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:19,780 INFO Thread-26 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:19] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:24,769 INFO Thread-27 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:24] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:29,777 INFO Thread-28 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:34,785 INFO Thread-29 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:34] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:39,776 INFO Thread-30 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:39] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:44,780 INFO Thread-31 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:44] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:49,779 INFO Thread-32 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:49] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:14:54,769 INFO Thread-33 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:14:54] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:15:08,361 INFO Thread-34 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:15:08] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:15:08,373 INFO Thread-35 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:15:08] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:15:09,777 INFO Thread-36 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:15:09] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:15,303 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:16:15,304 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:16:15,545 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:15] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:19,796 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:19] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:20,604 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:20] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:20,607 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:20] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:16:20,611 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:20] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:16:20,910 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:20] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:16:24,769 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:24] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:26,095 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:26] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:29,785 INFO Thread-15 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:31,095 INFO Thread-16 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:31] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:31,686 INFO Thread-17 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:31] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:16:32,114 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:32] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-09-23 12:16:35,610 INFO Thread-19 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:35] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:40,614 INFO Thread-20 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:40] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:45,620 INFO Thread-21 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:45] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:50,607 INFO Thread-22 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:50] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:16:55,606 INFO Thread-23 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:16:55] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:00,607 INFO Thread-24 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:00] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:05,609 INFO Thread-25 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:05] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:10,607 INFO Thread-26 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:10] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:15,615 INFO Thread-27 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:15] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:20,610 INFO Thread-28 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:20] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:25,606 INFO Thread-29 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:25] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:30,605 INFO Thread-30 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:30] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:35,606 INFO Thread-31 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:35] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:40,603 INFO Thread-32 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:40] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:45,608 INFO Thread-33 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:45] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:50,609 INFO Thread-34 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:50] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:17:55,615 INFO Thread-35 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:17:55] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:00,609 INFO Thread-36 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:00] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:05,611 INFO Thread-37 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:05] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:10,614 INFO Thread-38 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:10] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:15,603 INFO Thread-39 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:15] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:20,615 INFO Thread-40 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:20] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:25,611 INFO Thread-41 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:25] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:30,610 INFO Thread-42 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:30] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:35,604 INFO Thread-43 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:35] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:18:40,617 INFO Thread-44 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:18:40] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:23,904 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:23:23,904 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:23:26,517 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:26] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:26,583 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:26] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:23:26,606 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:26] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:23:27,083 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:27] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:23:27,156 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:27] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:31,277 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:31] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:36,277 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:36] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:39,102 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:39] "OPTIONS /call HTTP/1.1" 200 -
+2025-09-23 12:23:41,278 INFO Thread-16 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:41] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:46,277 INFO Thread-17 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:46] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:49,261 ERROR Thread-15 (process_request_thread) root: API /call failed: Peer rejected or no answer
+2025-09-23 12:23:49,262 INFO Thread-15 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:49] "[31m[1mPOST /call HTTP/1.1[0m" 409 -
+2025-09-23 12:23:51,282 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:51] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:23:56,277 INFO Thread-19 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:23:56] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:01,277 INFO Thread-20 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:01] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:06,289 INFO Thread-21 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:06] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:06,524 INFO Thread-22 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:06] "OPTIONS /call HTTP/1.1" 200 -
+2025-09-23 12:24:11,284 INFO Thread-24 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:11] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:13,198 INFO Thread-23 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:13] "POST /call HTTP/1.1" 200 -
+2025-09-23 12:24:16,277 INFO Thread-27 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:16] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:21,276 INFO Thread-28 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:21] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:26,279 INFO Thread-29 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:26] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:31,278 INFO Thread-30 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:31] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:36,278 INFO Thread-31 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:36] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:41,286 INFO Thread-32 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:41] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:46,285 INFO Thread-33 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:46] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:50,223 INFO Thread-34 (process_request_thread) root: VoIP encerrado.
+2025-09-23 12:24:50,224 INFO Thread-34 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:50] "POST /hangup HTTP/1.1" 200 -
+2025-09-23 12:24:51,276 INFO Thread-35 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:51] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:24:56,277 INFO Thread-36 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:24:56] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:33:16,545 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:33:16,551 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:33:41,126 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:33:41] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:08,499 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:08] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:10,827 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:10] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:10,827 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:10] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:34:10,850 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:10] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:34:11,024 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:11] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:34:15,818 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:15] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:20,798 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:20] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:25,799 INFO Thread-15 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:25] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:30,800 INFO Thread-16 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:30] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:35,799 INFO Thread-17 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:35] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:40,804 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:40] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:45,805 INFO Thread-19 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:45] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:50,802 INFO Thread-20 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:50] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:34:55,808 INFO Thread-21 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:34:55] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:00,801 INFO Thread-22 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:00] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:05,808 INFO Thread-23 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:05] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:10,806 INFO Thread-24 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:10] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:15,797 INFO Thread-25 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:15] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:20,799 INFO Thread-26 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:20] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:25,707 INFO Thread-27 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:25] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:35:25,886 INFO Thread-28 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:25] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:35:28,484 INFO Thread-29 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:28] "OPTIONS /user HTTP/1.1" 200 -
+2025-09-23 12:35:28,500 INFO Thread-30 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:28] "POST /user HTTP/1.1" 200 -
+2025-09-23 12:35:28,531 INFO Thread-31 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:28] "OPTIONS /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:35:28,537 INFO Thread-32 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:28] "POST /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:35:30,723 INFO Thread-33 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:30] "POST /user HTTP/1.1" 200 -
+2025-09-23 12:35:30,733 INFO Thread-34 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:30] "POST /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:35:33,343 INFO Thread-35 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:33] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:35:33,371 INFO Thread-36 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:33] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:33,375 INFO Thread-37 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:33] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:35:33,558 INFO Thread-38 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:33] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:35:38,321 INFO Thread-39 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:38] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:39,388 INFO Thread-40 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:39] "OPTIONS /call HTTP/1.1" 200 -
+2025-09-23 12:35:43,323 INFO Thread-42 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:43] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:48,324 INFO Thread-43 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:48] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:49,543 ERROR Thread-41 (process_request_thread) root: API /call failed: Peer rejected or no answer
+2025-09-23 12:35:49,544 INFO Thread-41 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:49] "[31m[1mPOST /call HTTP/1.1[0m" 409 -
+2025-09-23 12:35:53,327 INFO Thread-44 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:53] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:35:58,327 INFO Thread-45 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:35:58] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:03,329 INFO Thread-46 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:03] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:08,326 INFO Thread-47 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:08] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:13,345 INFO Thread-48 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:13] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:18,339 INFO Thread-49 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:18] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:23,330 INFO Thread-50 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:23] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:28,320 INFO Thread-51 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:28] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:33,328 INFO Thread-52 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:33] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:38,329 INFO Thread-53 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:38] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:43,332 INFO Thread-54 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:43] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:48,331 INFO Thread-55 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:48] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:53,318 INFO Thread-56 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:53] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:36:54,472 INFO Thread-57 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:54] "OPTIONS /call HTTP/1.1" 200 -
+2025-09-23 12:36:58,328 INFO Thread-59 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:36:58] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:03,324 INFO Thread-60 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:03] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:04,605 ERROR Thread-58 (process_request_thread) root: API /call failed: Peer rejected or no answer
+2025-09-23 12:37:04,606 INFO Thread-58 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:04] "[31m[1mPOST /call HTTP/1.1[0m" 409 -
+2025-09-23 12:37:08,333 INFO Thread-61 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:08] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:13,319 INFO Thread-62 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:13] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:16,083 INFO Thread-63 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:16] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:37:16,230 INFO Thread-64 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:16] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:37:21,390 INFO Thread-65 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:21] "OPTIONS /user HTTP/1.1" 200 -
+2025-09-23 12:37:21,402 INFO Thread-66 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:21] "POST /user HTTP/1.1" 200 -
+2025-09-23 12:37:21,408 INFO Thread-67 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:21] "OPTIONS /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:37:21,420 INFO Thread-68 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:21] "POST /audio-devices HTTP/1.1" 200 -
+2025-09-23 12:37:24,889 INFO Thread-69 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:24] "GET /volume HTTP/1.1" 200 -
+2025-09-23 12:37:24,920 INFO Thread-70 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:24] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:24,928 INFO Thread-71 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:24] "GET /user HTTP/1.1" 200 -
+2025-09-23 12:37:25,039 INFO Thread-72 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:25] "GET /devices HTTP/1.1" 200 -
+2025-09-23 12:37:29,851 INFO Thread-73 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:34,850 INFO Thread-74 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:34] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:39,842 INFO Thread-75 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:39] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:44,852 INFO Thread-76 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:44] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:47,101 INFO Thread-77 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:47] "OPTIONS /call HTTP/1.1" 200 -
+2025-09-23 12:37:49,844 INFO Thread-79 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:49] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:50,423 INFO Thread-78 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:50] "POST /call HTTP/1.1" 200 -
+2025-09-23 12:37:54,847 INFO Thread-82 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:54] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:37:59,848 INFO Thread-83 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:37:59] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:04,865 INFO Thread-84 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:04] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:09,845 INFO Thread-85 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:09] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:14,850 INFO Thread-86 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:14] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:19,846 INFO Thread-87 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:19] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:24,851 INFO Thread-88 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:24] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:29,859 INFO Thread-89 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:34,856 INFO Thread-90 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:34] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:39,860 INFO Thread-91 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:39] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:44,844 INFO Thread-92 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:44] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:49,847 INFO Thread-93 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:49] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:54,849 INFO Thread-94 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:54] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:38:59,848 INFO Thread-95 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:38:59] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:04,852 INFO Thread-96 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:04] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:09,851 INFO Thread-97 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:09] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:14,861 INFO Thread-98 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:14] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:19,854 INFO Thread-99 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:19] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:24,843 INFO Thread-100 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:24] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:29,843 INFO Thread-101 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:34,845 INFO Thread-102 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:34] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:39,846 INFO Thread-103 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:39] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:44,848 INFO Thread-104 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:44] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:49,852 INFO Thread-105 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:49] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:54,847 INFO Thread-106 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:54] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:39:59,842 INFO Thread-107 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:39:59] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:04,857 INFO Thread-108 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:04] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:09,844 INFO Thread-109 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:09] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:14,857 INFO Thread-110 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:14] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:19,842 INFO Thread-111 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:19] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:24,852 INFO Thread-112 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:24] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:29,845 INFO Thread-113 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:29] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:34,854 INFO Thread-114 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:34] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:39,850 INFO Thread-115 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:39] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:44,857 INFO Thread-116 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:44] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:40:49,852 INFO Thread-117 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:40:49] "GET /status HTTP/1.1" 200 -
+2025-09-23 12:55:44,429 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-09-23 12:55:44,430 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-09-23 12:56:41,120 INFO Thread-7 (process_request_thread) werkzeug: 127.0.0.1 - - [23/Sep/2025 12:56:41] "GET /status HTTP/1.1" 200 -

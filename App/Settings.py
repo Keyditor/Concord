@@ -6,7 +6,12 @@ import pyaudio
 class SettingsManager:
 
 	def __init__(self, db_path="concord.db"):
-		self.db_path = db_path
+		# Ensure DB path is absolute and anchored to project root, not CWD
+		if not os.path.isabs(db_path):
+			project_root = os.path.dirname(os.path.dirname(__file__))
+			self.db_path = os.path.abspath(os.path.join(project_root, db_path))
+		else:
+			self.db_path = db_path
 		self._init_db()
 
 	def _init_db(self):

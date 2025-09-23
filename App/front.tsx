@@ -9,7 +9,7 @@ const PhoneOff = ({ className = '' }) => <span className={className}>🛑</span>
 const Settings = ({ className = '' }) => <span className={className}>⚙️</span>;
 const User = ({ className = '' }) => <span className={className}>👤</span>;
 const Mic = ({ className = '' }) => <span className={className}>🎙️</span>;
-const MicOff = ({ className = '' }) => <span className={className}>🔇</span>;
+const MicOff = ({ className = '' }) => <span className={className}>🎙️</span>;
 const Volume2 = ({ className = '' }) => <span className={className}>🔊</span>;
 const VolumeX = ({ className = '' }) => <span className={className}>🔈</span>;
 const ArrowLeft = ({ className = '' }) => <span className={className}>⬅️</span>;
@@ -26,14 +26,20 @@ const VoiceChatApp = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [inputDevice, setInputDevice] = useState('default');
   const [outputDevice, setOutputDevice] = useState('default');
+  const [inputDeviceList, setInputDeviceList] = useState([]);
+  const [outputDeviceList, setOutputDeviceList] = useState([]);
   const [peers, setPeers] = useState([]);
+  const [pendingOffer, setPendingOffer] = useState(null);
   const apiBase = 'http://127.0.0.1:5001';
 
   const fetchStatus = async () => {
     try {
       const resp = await fetch(`${apiBase}/status`);
       const data = await resp.json();
-      setPeers(data.peers || []);
+      // remove peers that are no longer in backend list
+      const freshPeers = Array.isArray(data.peers) ? data.peers : [];
+      setPeers(freshPeers);
+      setPendingOffer(data.pending_offer || null);
     } catch (e) {
       // ignore
     }
@@ -62,12 +68,15 @@ const VoiceChatApp = () => {
       } catch (e) { setNickname('New User'); }
       try {
         const d = await (await fetch(`${apiBase}/devices`)).json();
-        // store available devices (simple: take first as default selections if 'default')
-        if (inputDevice === 'default' && Array.isArray(d.input) && d.input.length) {
-          setInputDevice(String(d.input[0].index ?? 'default'));
+        const inList = Array.isArray(d.input) ? d.input : [];
+        const outList = Array.isArray(d.output) ? d.output : [];
+        setInputDeviceList(inList);
+        setOutputDeviceList(outList);
+        if (inputDevice === 'default' && inList.length) {
+          setInputDevice(String(inList[0].index));
         }
-        if (outputDevice === 'default' && Array.isArray(d.output) && d.output.length) {
-          setOutputDevice(String(d.output[0].index ?? 'default'));
+        if (outputDevice === 'default' && outList.length) {
+          setOutputDevice(String(outList[0].index));
         }
       } catch (e) {}
     })();
@@ -124,16 +133,10 @@ const VoiceChatApp = () => {
             </button>
             {showDropdown && (
               <div className="absolute right-0 top-full mt-2 bg-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
-                <button
-                  onClick={() => {
-                    setCurrentScreen('settings');
-                    setShowDropdown(false);
-                  }}
-                  className="w-full px-4 py-2 text-left text-white hover:bg-gray-600 rounded-lg flex items-center gap-2"
-                >
+                <a href="/settings.html" className="w-full block px-4 py-2 text-left text-white hover:bg-gray-600 rounded-lg flex items-center gap-2">
                   <Settings className="w-4 h-4" />
                   Settings
-                </button>
+                </a>
               </div>
             )}
           </div>
@@ -167,6 +170,22 @@ const VoiceChatApp = () => {
         {/* Active Calls */}
         <div className="mb-8">
           <h2 className="text-2xl font-light text-white mb-6">Active Calls</h2>
+          {pendingOffer && !activeCall ? (
+            <div className="p-6 rounded-xl bg-gray-700/50 border border-yellow-600 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center">
+                    <User className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xl text-white font-medium">Incoming: {pendingOffer.peer_ip}</span>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={async () => { try { const r = await fetch(`${apiBase}/accept`, { method: 'POST' }); if (r.ok) { setActiveCall(pendingOffer.peer_ip); setPendingOffer(null); } } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
+                  <button onClick={async () => { try { await fetch(`${apiBase}/reject`, { method: 'POST' }); } catch (e) {} setPendingOffer(null); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white">Reject</button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {activeCall ? (
             <div className="p-6 rounded-xl bg-gray-700/50 border border-gray-600">
               <div className="flex items-center justify-between">
@@ -246,8 +265,12 @@ const VoiceChatApp = () => {
                 onChange={(e) => setInputDevice(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg border border-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
               >
-                {/* populated from backend via /devices on mount; keep simple default for now */}
-                <option value={inputDevice} className="bg-gray-600">{inputDevice}</option>
+                {inputDeviceList.length === 0 && (
+                  <option value={inputDevice} className="bg-gray-600">No inputs</option>
+                )}
+                {inputDeviceList.map((d) => (
+                  <option key={`in-${d.index}`} value={String(d.index)} className="bg-gray-600">{d.name}</option>
+                ))}
               </select>
             </div>
 
@@ -278,7 +301,12 @@ const VoiceChatApp = () => {
                 onChange={(e) => setOutputDevice(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg border border-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
               >
-                <option value={outputDevice} className="bg-gray-600">{outputDevice}</option>
+                {outputDeviceList.length === 0 && (
+                  <option value={outputDevice} className="bg-gray-600">No outputs</option>
+                )}
+                {outputDeviceList.map((d) => (
+                  <option key={`out-${d.index}`} value={String(d.index)} className="bg-gray-600">{d.name}</option>
+                ))}
               </select>
             </div>
 
@@ -327,7 +355,7 @@ const VoiceChatApp = () => {
           <button
             onClick={async () => {
               try { await fetch(`${apiBase}/user`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: nickname || 'New User' }) }); } catch (e) {}
-              try { await fetch(`${apiBase}/audio-devices`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ input: inputDevice, output: outputDevice }) }); } catch (e) {}
+              try { await fetch(`${apiBase}/audio-devices`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ input: Number(inputDevice), output: Number(outputDevice) }) }); } catch (e) {}
               setCurrentScreen('main');
             }}
             className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"

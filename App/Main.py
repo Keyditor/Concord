@@ -12,7 +12,10 @@ import socket
 import platform
 import msvcrt
 import time
+import logging
+import sys
 import threading
+import webview
 
 
 """
@@ -21,6 +24,29 @@ Main sem ZeroTier: Descoberta via broadcast em todas as redes.
 
 # Inicializar configurações
 settings = Settings.SettingsManager()
+
+# ---- Logging configuration ----
+try:
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+except Exception:
+    base_dir = os.getcwd()
+log_file = os.path.join(base_dir, 'concord.log')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, encoding='utf-8'),
+        logging.StreamHandler(sys.stdout),
+    ],
+)
+
+def _excepthook(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+sys.excepthook = _excepthook
 
 # Configurar username se não existir
 username = settings.get_username() or "New User"
@@ -103,6 +129,7 @@ def api_status():
         "interfaces": Discovery.get_local_ipv4_interfaces(),
         "peers": peers,
         "pending": bool(control.pending_offer),
+        "pending_offer": control.pending_offer or None,
         "in_call": current_call["room"] is not None,
     }
 
@@ -189,7 +216,6 @@ hostname = platform.node()
 iface_list = Discovery.get_local_ipv4_interfaces()
 
 def render_header(status_text):
-    os.system('cls' if os.name == 'nt' else 'clear')
     print("Concord - P2P VoIP")
     print(f"Host: {hostname}")
     bcasts = ", ".join([f"{i['ip']} -> {i['broadcast']} ({i['network']})" for i in iface_list])
@@ -202,7 +228,13 @@ try:
     def _launch_front():
         try:
             import run_front
-            run_front.serve_frontend(os.path.dirname(__file__))
+            run_front.serve_frontend(os.path.dirname(__file__), open_browser=False)
+            # launch webview app window
+            try:
+                webview.create_window('Concord', 'http://127.0.0.1:5173/index.html', width=1200, height=800)
+                webview.start()
+            except Exception:
+                pass
         except Exception:
             pass
     threading.Thread(target=_launch_front, daemon=True).start()

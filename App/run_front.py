@@ -11,19 +11,20 @@ class SilentHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
 		pass
 
 
-def serve_frontend(directory: str, port: int = 5173):
+def serve_frontend(directory: str, port: int = 5173, open_browser: bool = False):
 	os.chdir(directory)
 	handler = SilentHTTPRequestHandler
 	httpd = socketserver.TCPServer(("127.0.0.1", port), handler)
 	thread = threading.Thread(target=httpd.serve_forever)
 	thread.daemon = True
 	thread.start()
-	# open browser
+	# optionally open browser
 	url = f"http://127.0.0.1:{port}/index.html"
-	try:
-		webbrowser.open(url)
-	except Exception:
-		pass
+	if open_browser:
+		try:
+			webbrowser.open(url)
+		except Exception:
+			pass
 	return httpd
 
 

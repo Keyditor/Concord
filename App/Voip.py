@@ -3,6 +3,7 @@ import pyaudio
 import threading
 import select
 import audioop
+import logging
 
 # Configurações de áudio
 CHUNK = 1024  # Tamanho do buffer
@@ -69,7 +70,7 @@ class VoipRoom:
 				# Envia para o IP e porta remotos
 				self.sock.sendto(data, (self.REMOTE_IP, self.REMOTE_PORT))
 			except Exception as e:
-				print(f"Erro no envio de áudio: {e}")
+				logging.exception("Erro no envio de áudio")
 
 	# Função para receber áudio
 	def receive_audio(self):
@@ -91,7 +92,7 @@ class VoipRoom:
 				# permite checar self.running periodicamente
 				continue
 			except Exception as e:
-				print(f"Erro ao receber áudio: {e}")
+				logging.exception("Erro ao receber áudio")
 
 	# Função para iniciar as threads
 	def start(self):
@@ -111,7 +112,7 @@ class VoipRoom:
 		self.output_stream.close()
 		self.audio.terminate()
 		self.sock.close()
-		print("VoIP encerrado.")
+		logging.info("VoIP encerrado.")
 
 	# ------ Volume controls ------
 	def set_input_volume(self, percent):
