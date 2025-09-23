@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 
 class ApiServer:
 
-	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, get_volume_fn=None, set_volume_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None):
+	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, get_volume_fn=None, set_volume_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None, get_mic_level_fn=None, test_output_fn=None):
 		self.host = host
 		self.port = port
 		self._thread = threading.Thread(target=self._run)
@@ -25,6 +25,8 @@ class ApiServer:
 		self._set_devices = set_devices_fn or (lambda *_: False)
 		self._get_username = get_username_fn or (lambda: "New User")
 		self._set_username = set_username_fn or (lambda _u: False)
+		self._get_mic_level = get_mic_level_fn or (lambda: 0)
+		self._test_output = test_output_fn or (lambda *_: False)
 		self._register_routes()
 
 	def _register_routes(self):
@@ -116,6 +118,28 @@ class ApiServer:
 		@app.get('/devices')
 		def list_devices():
 			return jsonify(self._devices_provider())
+
+		@app.get('/mic-level')
+		def mic_level():
+			try:
+				# optional device override via query param
+				inp = request.args.get('input')
+				level = int(self._get_mic_level(None if inp is None else int(inp)))
+				level = max(0, min(100, level))
+				return jsonify({"level": level})
+			except Exception:
+				return jsonify({"level": 0})
+
+		@app.post('/test-output')
+		def test_output():
+			data = request.get_json(silent=True) or {}
+			out = data.get('output')
+			ok = self._test_output(out)
+			return jsonify({"ok": bool(ok)})
+
+		@app.route('/test-output', methods=['OPTIONS'])
+		def test_output_options():
+			return ('', 204)
 
 		@app.post('/audio-devices')
 		def set_devices():

@@ -1,7 +1,7 @@
+/* eslint-disable no-redeclare */
 /* global React, ReactDOM */
 declare var React: any;
 declare var ReactDOM: any;
-const { useEffect, useState } = React;
 
 // Minimal placeholder icon components (no external deps)
 const Phone = ({ className = '' }) => <span className={className}>📞</span>;
@@ -16,20 +16,21 @@ const ArrowLeft = ({ className = '' }) => <span className={className}>⬅️</sp
 const ChevronDown = ({ className = '' }) => <span className={className}>▾</span>;
 
 const VoiceChatApp = () => {
-  const [currentScreen, setCurrentScreen] = useState('main');
-  const [activeCall, setActiveCall] = useState(null);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isDeafened, setIsDeafened] = useState(false);
-  const [inputVolume, setInputVolume] = useState(75);
-  const [outputVolume, setOutputVolume] = useState(80);
-  const [nickname, setNickname] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [inputDevice, setInputDevice] = useState('default');
-  const [outputDevice, setOutputDevice] = useState('default');
-  const [inputDeviceList, setInputDeviceList] = useState([]);
-  const [outputDeviceList, setOutputDeviceList] = useState([]);
-  const [peers, setPeers] = useState([]);
-  const [pendingOffer, setPendingOffer] = useState(null);
+  const { useEffect, useState } = React;
+  const [currentScreen, setCurrentScreen] = React.useState('main');
+  const [activeCall, setActiveCall] = React.useState(null);
+  const [isMuted, setIsMuted] = React.useState(false);
+  const [isDeafened, setIsDeafened] = React.useState(false);
+  const [inputVolume, setInputVolume] = React.useState(75);
+  const [outputVolume, setOutputVolume] = React.useState(80);
+  const [nickname, setNickname] = React.useState('');
+  const [showDropdown, setShowDropdown] = React.useState(false);
+  const [inputDevice, setInputDevice] = React.useState('default');
+  const [outputDevice, setOutputDevice] = React.useState('default');
+  const [inputDeviceList, setInputDeviceList] = React.useState([]);
+  const [outputDeviceList, setOutputDeviceList] = React.useState([]);
+  const [peers, setPeers] = React.useState([]);
+  const [pendingOffer, setPendingOffer] = React.useState(null);
   const apiBase = 'http://127.0.0.1:5001';
 
   const fetchStatus = async () => {
@@ -104,7 +105,8 @@ const VoiceChatApp = () => {
     try {
       const resp = await fetch(`${apiBase}/call`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ip, control_port }) });
       if (resp.ok) {
-        setActiveCall(ip);
+        const data = await resp.json();
+        setActiveCall(data);
       }
     } catch (e) {}
   };
@@ -180,7 +182,7 @@ const VoiceChatApp = () => {
                   <span className="text-xl text-white font-medium">Incoming: {pendingOffer.peer_ip}</span>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={async () => { try { const r = await fetch(`${apiBase}/accept`, { method: 'POST' }); if (r.ok) { setActiveCall(pendingOffer.peer_ip); setPendingOffer(null); } } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
+                  <button onClick={async () => { try { const r = await fetch(`${apiBase}/accept`, { method: 'POST' }); if (r.ok) { const data = await r.json(); setActiveCall(data); setPendingOffer(null); } } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
                   <button onClick={async () => { try { await fetch(`${apiBase}/reject`, { method: 'POST' }); } catch (e) {} setPendingOffer(null); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white">Reject</button>
                 </div>
               </div>
@@ -193,7 +195,7 @@ const VoiceChatApp = () => {
                   <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
                     <User className="w-6 h-6 text-white" />
                   </div>
-                <span className="text-xl text-white font-medium">{activeCall || ''}</span>
+                <span className="text-xl text-white font-medium">{typeof activeCall === 'object' ? (activeCall.remote_username || activeCall.remote_ip) : String(activeCall)}</span>
                 </div>
                 <button
                   onClick={handleEndCall}

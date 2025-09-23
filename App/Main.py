@@ -154,7 +154,16 @@ def api_start_call(ip, ctrl_port):
     )
     room.start()
     current_call["room"] = room
-    return True, {"remote_ip": ip, "local_ip": result['local_ip']}
+    # resolve remote username from discovery
+    remote_name = ip
+    try:
+        for p in discovery.get_peers():
+            if p.get('ip') == ip:
+                remote_name = p.get('username', p.get('display_name', ip))
+                break
+    except Exception:
+        pass
+    return True, {"remote_ip": ip, "local_ip": result['local_ip'], "remote_username": remote_name}
 
 def api_accept():
     if current_call["room"] is not None:
@@ -176,7 +185,16 @@ def api_accept():
     )
     room.start()
     current_call["room"] = room
-    return True, {"remote_ip": accepted['peer_ip'], "local_ip": accepted['local_ip']}
+    # resolve remote username from discovery
+    remote_name = accepted['peer_ip']
+    try:
+        for p in discovery.get_peers():
+            if p.get('ip') == accepted['peer_ip']:
+                remote_name = p.get('username', p.get('display_name', accepted['peer_ip']))
+                break
+    except Exception:
+        pass
+    return True, {"remote_ip": accepted['peer_ip'], "local_ip": accepted['local_ip'], "remote_username": remote_name}
 
 def api_reject():
     return control.reject_pending()
@@ -189,6 +207,66 @@ def api_hangup():
     finally:
         current_call["room"] = None
     return True
+
+def _sample_mic_level(device_index):
+    try:
+        import pyaudio, audioop
+        pa = pyaudio.PyAudio()
+        stream = pa.open(format=pyaudio.paInt16, channels=1, rate=44100, input=True, frames_per_buffer=1024,
+                         input_device_index=device_index if device_index is not None else None)
+        try:
+            data = stream.read(1024, exception_on_overflow=False)
+            rms = audioop.rms(data, 2)
+            level = min(100, int((rms / 32767.0) * 100))
+        finally:
+            try:
+                stream.close()
+            except Exception:
+                pass
+            try:
+                pa.terminate()
+            except Exception:
+                pass
+        return level
+    except Exception:
+        return 0
+
+def _get_mic_level(device_index=None):
+    try:
+        idx = device_index
+        if idx is None:
+            devs = settings.get_audio_devices()
+            idx = devs.get("input")
+        return _sample_mic_level(idx)
+    except Exception:
+        return 0
+
+def _play_test_tone(output_device_index):
+    try:
+        import pyaudio, math, struct
+        pa = pyaudio.PyAudio()
+        rate = 44100
+        duration = 0.6  # seconds
+        freq = 880.0
+        frames = int(rate * duration)
+        stream = pa.open(format=pyaudio.paInt16, channels=1, rate=rate, output=True,
+                         output_device_index=int(output_device_index) if output_device_index is not None else None)
+        # Follow currently selected output volume (0-100)
+        try:
+            vol_factor = float(_output_volume_percent) / 100.0
+        except Exception:
+            vol_factor = 1.0
+        vol_factor = max(0.0, min(1.0, vol_factor))
+        for n in range(frames):
+            sample = int(0.6 * vol_factor * 32767 * math.sin(2 * math.pi * freq * (n / rate)))
+            stream.write(struct.pack('<h', sample))
+        try:
+            stream.close()
+        finally:
+            pa.terminate()
+        return True
+    except Exception:
+        return False
 
 api = Api.ApiServer(
     host="127.0.0.1",
@@ -209,6 +287,8 @@ api = Api.ApiServer(
     set_devices_fn=lambda inp, out: (settings.set_audio_devices(inp, out) or True),
     get_username_fn=settings.get_username,
     set_username_fn=settings.set_username,
+    get_mic_level_fn=_get_mic_level,
+    test_output_fn=lambda out_idx: _play_test_tone(out_idx),
 )
 api.start()
 
@@ -225,112 +305,119 @@ def render_header(status_text):
 
 try:
     # Launch lightweight static server for front-end after API is up
-    def _launch_front():
+    def _serve_frontend():
         try:
             import run_front
             run_front.serve_frontend(os.path.dirname(__file__), open_browser=False)
-            # launch webview app window
-            try:
-                webview.create_window('Concord', 'http://127.0.0.1:5173/index.html', width=1200, height=800)
-                webview.start()
-            except Exception:
-                pass
         except Exception:
-            pass
-    threading.Thread(target=_launch_front, daemon=True).start()
+            logging.exception("Falha ao iniciar o servidor do frontend")
 
-    current_room = None
-    input_buffer = ""
-    last_render = 0.0
-    awaiting_answer = False
-    peers = []
-    
-    while True:
-        now = time.time()
-        if now - last_render >= 5.0:
-            peers = discovery.get_peers()
-            render_header("Buscando peers...")
-            if peers:
-                print("Peers encontrados:")
-                for idx, p in enumerate(peers):
-                    username = p.get('username', p['display_name'])
-                    print(f"{idx}) {username} - {p['ip']}")
-                print("")
-                print(f"Conectar a peer (número): {input_buffer}")
-            else:
-                print("Nenhum peer encontrado")
-            
-            # Mostrar chamada recebida independente de haver peers
-            if control.pending_offer and not awaiting_answer:
-                po = control.pending_offer
-                print("")
-                print(f"Chamada recebida de {po['peer_ip']} (porta {po['peer_media_port']}). Aceitar? [Y/N]")
-                awaiting_answer = True
-            last_render = now
+    # Move console UI loop to a background thread so webview can run on main thread
+    def _console_loop():
+        try:
+            current_room = None
+            input_buffer = ""
+            last_render = 0.0
+            awaiting_answer = False
+            peers = []
+            while True:
+                now = time.time()
+                if now - last_render >= 5.0:
+                    peers = discovery.get_peers()
+                    render_header("Buscando peers...")
+                    if peers:
+                        print("Peers encontrados:")
+                        for idx, p in enumerate(peers):
+                            username = p.get('username', p['display_name'])
+                            print(f"{idx}) {username} - {p['ip']}")
+                        print("")
+                        print(f"Conectar a peer (número): {input_buffer}")
+                    else:
+                        print("Nenhum peer encontrado")
 
-        # Non-blocking keyboard input (Windows)
-        if msvcrt.kbhit():
-            ch = msvcrt.getwch()
-            if awaiting_answer:
-                if ch.lower() == 'y':
-                    accepted = control.accept_pending()
-                    awaiting_answer = False
-                    if accepted:
-                        room = Voip.VoipRoom(
-                            LOCAL_IP=accepted['local_ip'], 
-                            LOCAL_PORT=accepted['my_media_port'], 
-                            REMOTE_IP=accepted['peer_ip'], 
-                            REMOTE_PORT=accepted['peer_media_port'],
-                            input_device=audio_devices["input"],
-                            output_device=audio_devices["output"]
-                        )
-                        room.start()
-                        print("Conectado. Pressione ENTER para encerrar a chamada.")
-                        input()  # aqui pode bloquear durante a chamada
-                        room.stop()
+                    # Mostrar chamada recebida independente de haver peers
+                    if control.pending_offer and not awaiting_answer:
+                        po = control.pending_offer
+                        print("")
+                        print(f"Chamada recebida de {po['peer_ip']} (porta {po['peer_media_port']}). Aceitar? [Y/N]")
+                        awaiting_answer = True
+                    last_render = now
+
+                # Non-blocking keyboard input (Windows)
+                if msvcrt.kbhit():
+                    ch = msvcrt.getwch()
+                    if awaiting_answer:
+                        if ch.lower() == 'y':
+                            accepted = control.accept_pending()
+                            awaiting_answer = False
+                            if accepted:
+                                room = Voip.VoipRoom(
+                                    LOCAL_IP=accepted['local_ip'],
+                                    LOCAL_PORT=accepted['my_media_port'],
+                                    REMOTE_IP=accepted['peer_ip'],
+                                    REMOTE_PORT=accepted['peer_media_port'],
+                                    input_device=audio_devices["input"],
+                                    output_device=audio_devices["output"]
+                                )
+                                room.start()
+                                print("Conectado. Pressione ENTER para encerrar a chamada.")
+                                input()  # aqui pode bloquear durante a chamada
+                                room.stop()
+                                input_buffer = ""
+                                last_render = 0
+                        elif ch.lower() == 'n':
+                            control.reject_pending()
+                            awaiting_answer = False
+                            last_render = 0
+                        continue
+
+                    if ch in ('\r', '\n'):
+                        if input_buffer.strip() != "" and peers:
+                            try:
+                                sel = int(input_buffer)
+                                target = peers[sel]
+                                render_header(f"Chamando {target['ip']}...")
+                                result = Discovery.initiate_call(target['ip'], target['control_port'])
+                                if result is None:
+                                    print("Sem resposta ou recusado pelo peer.")
+                                    time.sleep(1.5)
+                                else:
+                                    room = Voip.VoipRoom(
+                                        LOCAL_IP=result['local_ip'],
+                                        LOCAL_PORT=result['local_media_port'],
+                                        REMOTE_IP=target['ip'],
+                                        REMOTE_PORT=result['remote_media_port'],
+                                        input_device=audio_devices["input"],
+                                        output_device=audio_devices["output"]
+                                    )
+                                    room.start()
+                                    print("Conectado. Pressione ENTER para encerrar a chamada.")
+                                    input()
+                                    room.stop()
+                            except (ValueError, IndexError):
+                                pass
                         input_buffer = ""
                         last_render = 0
-                elif ch.lower() == 'n':
-                    control.reject_pending()
-                    awaiting_answer = False
-                    last_render = 0
-                continue
+                    elif ch == '\x08':  # backspace
+                        input_buffer = input_buffer[:-1]
+                        last_render = 0
+                    elif ch.isdigit():
+                        input_buffer += ch
+                        last_render = 0
 
-            if ch in ('\r', '\n'):
-                if input_buffer.strip() != "" and peers:
-                    try:
-                        sel = int(input_buffer)
-                        target = peers[sel]
-                        render_header(f"Chamando {target['ip']}...")
-                        result = Discovery.initiate_call(target['ip'], target['control_port'])
-                        if result is None:
-                            print("Sem resposta ou recusado pelo peer.")
-                            time.sleep(1.5)
-                        else:
-                            room = Voip.VoipRoom(
-                                LOCAL_IP=result['local_ip'], 
-                                LOCAL_PORT=result['local_media_port'], 
-                                REMOTE_IP=target['ip'], 
-                                REMOTE_PORT=result['remote_media_port'],
-                                input_device=audio_devices["input"],
-                                output_device=audio_devices["output"]
-                            )
-                            room.start()
-                            print("Conectado. Pressione ENTER para encerrar a chamada.")
-                            input()
-                            room.stop()
-                    except (ValueError, IndexError):
-                        pass
-                input_buffer = ""
-                last_render = 0
-            elif ch == '\x08':  # backspace
-                input_buffer = input_buffer[:-1]
-                last_render = 0
-            elif ch.isdigit():
-                input_buffer += ch
-                last_render = 0
+                time.sleep(0.05)
+        except Exception:
+            logging.exception("Erro no loop de console")
 
-        time.sleep(0.05)
+    threading.Thread(target=_serve_frontend, daemon=True).start()
+    threading.Thread(target=_console_loop, daemon=True).start()
+
+    # Create and start webview on main thread
+    try:
+        webview.create_window('Concord', 'http://127.0.0.1:5173/index.html', width=1200, height=800)
+        webview.start()
+    except Exception:
+        logging.exception("Falha ao abrir a janela do webview")
 except KeyboardInterrupt:
     pass
 finally:
