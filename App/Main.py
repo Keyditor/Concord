@@ -12,6 +12,7 @@ import socket
 import platform
 import msvcrt
 import time
+import threading
 
 
 """
@@ -22,11 +23,8 @@ Main sem ZeroTier: Descoberta via broadcast em todas as redes.
 settings = Settings.SettingsManager()
 
 # Configurar username se não existir
-username = settings.get_username()
-if not username:
-    print("Primeira execução - configure seu username:")
-    username = input("Username: ").strip() or "User"
-    settings.set_username(username)
+username = settings.get_username() or "New User"
+settings.set_username(username)
 
 # Configurar dispositivos de áudio se não existirem
 audio_devices = settings.get_audio_devices()
@@ -66,6 +64,38 @@ control.start()
 # Simple call manager state shared with API
 current_call = {"room": None}
 
+# Volumes em porcentagem (0-100)
+_input_volume_percent = 100
+_output_volume_percent = 100
+
+def api_get_volume():
+    return {"input": _input_volume_percent, "output": _output_volume_percent}
+
+def api_set_volume(inp, out):
+    global _input_volume_percent, _output_volume_percent
+    changed = False
+    if inp is not None:
+        try:
+            val = int(float(inp))
+            if 0 <= val <= 100:
+                _input_volume_percent = val
+                if current_call["room"] is not None:
+                    current_call["room"].set_input_volume(val)
+                changed = True
+        except Exception:
+            pass
+    if out is not None:
+        try:
+            val = int(float(out))
+            if 0 <= val <= 100:
+                _output_volume_percent = val
+                if current_call["room"] is not None:
+                    current_call["room"].set_output_volume(val)
+                changed = True
+        except Exception:
+            pass
+    return changed
+
 def api_status():
     peers = discovery.get_peers()
     return {
@@ -91,7 +121,9 @@ def api_start_call(ip, ctrl_port):
         REMOTE_IP=ip, 
         REMOTE_PORT=result['remote_media_port'],
         input_device=audio_devices["input"],
-        output_device=audio_devices["output"]
+        output_device=audio_devices["output"],
+        input_volume=_input_volume_percent / 100.0,
+        output_volume=_output_volume_percent / 100.0,
     )
     room.start()
     current_call["room"] = room
@@ -111,7 +143,9 @@ def api_accept():
         REMOTE_IP=accepted['peer_ip'], 
         REMOTE_PORT=accepted['peer_media_port'],
         input_device=audio_devices["input"],
-        output_device=audio_devices["output"]
+        output_device=audio_devices["output"],
+        input_volume=_input_volume_percent / 100.0,
+        output_volume=_output_volume_percent / 100.0,
     )
     room.start()
     current_call["room"] = room
@@ -139,6 +173,15 @@ api = Api.ApiServer(
     accept_fn=api_accept,
     reject_fn=api_reject,
     hangup_fn=api_hangup,
+    get_volume_fn=api_get_volume,
+    set_volume_fn=api_set_volume,
+    devices_provider=lambda: {
+        "input": settings.get_input_devices(),
+        "output": settings.get_output_devices(),
+    },
+    set_devices_fn=lambda inp, out: (settings.set_audio_devices(inp, out) or True),
+    get_username_fn=settings.get_username,
+    set_username_fn=settings.set_username,
 )
 api.start()
 
@@ -155,6 +198,15 @@ def render_header(status_text):
     print("")
 
 try:
+    # Launch lightweight static server for front-end after API is up
+    def _launch_front():
+        try:
+            import run_front
+            run_front.serve_frontend(os.path.dirname(__file__))
+        except Exception:
+            pass
+    threading.Thread(target=_launch_front, daemon=True).start()
+
     current_room = None
     input_buffer = ""
     last_render = 0.0
