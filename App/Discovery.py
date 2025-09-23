@@ -128,6 +128,23 @@ class DiscoveryService:
 				time.sleep(self.beacon_interval)
 		sock.close()
 
+	def send_goodbye(self):
+		# Send a one-shot BYE to notify peers we are going offline
+		try:
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+			payload = {
+				"type": "BYE",
+				"id": self.self_id,
+			}
+			msg = json.dumps(payload).encode("utf-8")
+			for iface in get_local_ipv4_interfaces():
+				bcast = iface["broadcast"] or "255.255.255.255"
+				sock.sendto(msg, (bcast, self.broadcast_port))
+			sock.close()
+		except Exception:
+			pass
+
 	def _listen_loop(self):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -148,6 +165,10 @@ class DiscoveryService:
 								shared = net
 								break
 						self.registry.upsert_peer(msg["id"], peer_ip, int(msg["control_port"]), msg.get("name", "Concord"), msg.get("username"))
+					elif msg.get("type") == "BYE" and "id" in msg:
+						# Remove peer from registry on goodbye
+						with self.registry._lock:
+							self.registry._peers.pop(msg["id"], None)
 						# annotate grouping by network (optional: stored externally)
 				except Exception:
 					pass

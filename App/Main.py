@@ -124,13 +124,27 @@ def api_set_volume(inp, out):
 
 def api_status():
     peers = discovery.get_peers()
+    # enrich pending offer with username
+    po = control.pending_offer
+    if po:
+        try:
+            name = po.get('peer_ip')
+            for p in peers:
+                if p.get('ip') == po.get('peer_ip'):
+                    name = p.get('username', p.get('display_name', name))
+                    break
+            po = dict(po)
+            po['peer_username'] = name
+        except Exception:
+            pass
     return {
         "host": hostname,
         "interfaces": Discovery.get_local_ipv4_interfaces(),
         "peers": peers,
-        "pending": bool(control.pending_offer),
-        "pending_offer": control.pending_offer or None,
+        "pending": bool(po),
+        "pending_offer": po or None,
         "in_call": current_call["room"] is not None,
+        "current_call": current_call.get("info") if current_call["room"] is not None else None,
     }
 
 def api_peers():
@@ -163,7 +177,9 @@ def api_start_call(ip, ctrl_port):
                 break
     except Exception:
         pass
-    return True, {"remote_ip": ip, "local_ip": result['local_ip'], "remote_username": remote_name}
+    info = {"remote_ip": ip, "local_ip": result['local_ip'], "remote_username": remote_name}
+    current_call["info"] = info
+    return True, info
 
 def api_accept():
     if current_call["room"] is not None:
@@ -194,7 +210,9 @@ def api_accept():
                 break
     except Exception:
         pass
-    return True, {"remote_ip": accepted['peer_ip'], "local_ip": accepted['local_ip'], "remote_username": remote_name}
+    info = {"remote_ip": accepted['peer_ip'], "local_ip": accepted['local_ip'], "remote_username": remote_name}
+    current_call["info"] = info
+    return True, info
 
 def api_reject():
     return control.reject_pending()
@@ -206,6 +224,7 @@ def api_hangup():
         current_call["room"].stop()
     finally:
         current_call["room"] = None
+        current_call["info"] = None
     return True
 
 def _sample_mic_level(device_index):
@@ -421,6 +440,10 @@ try:
 except KeyboardInterrupt:
     pass
 finally:
+    try:
+        discovery.send_goodbye()
+    except Exception:
+        pass
     discovery.stop()
     control.stop()
 
