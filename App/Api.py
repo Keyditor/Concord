@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 
 class ApiServer:
 
-	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, get_volume_fn=None, set_volume_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None, get_mic_level_fn=None, test_output_fn=None):
+	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, get_volume_fn=None, set_volume_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None, get_mic_level_fn=None, test_output_fn=None, get_selected_devices_fn=None, set_ui_state_fn=None, window_minimize_fn=None, window_maximize_fn=None, window_close_fn=None, window_resize_fn=None):
 		self.host = host
 		self.port = port
 		self._thread = threading.Thread(target=self._run)
@@ -27,6 +27,12 @@ class ApiServer:
 		self._set_username = set_username_fn or (lambda _u: False)
 		self._get_mic_level = get_mic_level_fn or (lambda: 0)
 		self._test_output = test_output_fn or (lambda *_: False)
+		self._get_selected_devices = get_selected_devices_fn or (lambda: {"input": None, "output": None})
+		self._set_ui_state = set_ui_state_fn or (lambda _s: None)
+		self._window_minimize = window_minimize_fn or (lambda: False)
+		self._window_maximize = window_maximize_fn or (lambda: False)
+		self._window_close = window_close_fn or (lambda: False)
+		self._window_resize = window_resize_fn or (lambda *_: False)
 		self._register_routes()
 
 	def _register_routes(self):
@@ -118,6 +124,36 @@ class ApiServer:
 		@app.get('/devices')
 		def list_devices():
 			return jsonify(self._devices_provider())
+
+		@app.get('/audio-devices')
+		def get_selected_devices():
+			return jsonify(self._get_selected_devices())
+
+		@app.post('/ui-state')
+		def set_ui_state():
+			data = request.get_json(silent=True) or {}
+			state = data.get('state')
+			self._set_ui_state(state)
+			return jsonify({"ok": True})
+
+		@app.post('/window/minimize')
+		def window_minimize():
+			return jsonify({"ok": bool(self._window_minimize())})
+
+		@app.post('/window/maximize')
+		def window_maximize():
+			return jsonify({"ok": bool(self._window_maximize())})
+
+		@app.post('/window/close')
+		def window_close():
+			return jsonify({"ok": bool(self._window_close())})
+
+		@app.post('/window/resize')
+		def window_resize():
+			data = request.get_json(silent=True) or {}
+			w = data.get('width')
+			h = data.get('height')
+			return jsonify({"ok": bool(self._window_resize(w, h))})
 
 		@app.get('/mic-level')
 		def mic_level():

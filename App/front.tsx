@@ -25,10 +25,10 @@ const VoiceChatApp = () => {
   const [outputVolume, setOutputVolume] = React.useState(80);
   const [nickname, setNickname] = React.useState('');
   const [showDropdown, setShowDropdown] = React.useState(false);
-  const [inputDevice, setInputDevice] = React.useState('default');
-  const [outputDevice, setOutputDevice] = React.useState('default');
-  const [inputDeviceList, setInputDeviceList] = React.useState([]);
-  const [outputDeviceList, setOutputDeviceList] = React.useState([]);
+  const [inputDevicePos, setInputDevicePos] = React.useState('default');
+  const [outputDevicePos, setOutputDevicePos] = React.useState('default');
+  const [inputDeviceList, setInputDeviceList] = React.useState([]); // raw from API
+  const [outputDeviceList, setOutputDeviceList] = React.useState([]); // raw from API
   const [peers, setPeers] = React.useState([]);
   const [pendingOffer, setPendingOffer] = React.useState(null);
   const apiBase = 'http://127.0.0.1:5001';
@@ -59,9 +59,7 @@ const VoiceChatApp = () => {
 
   useEffect(() => {
     // Initial loads
-    fetchStatus();
     fetchVolume();
-    // Load user and available devices once
     (async () => {
       try {
         const u = await (await fetch(`${apiBase}/user`)).json();
@@ -73,18 +71,23 @@ const VoiceChatApp = () => {
         const outList = Array.isArray(d.output) ? d.output : [];
         setInputDeviceList(inList);
         setOutputDeviceList(outList);
-        if (inputDevice === 'default' && inList.length) {
-          setInputDevice(String(inList[0].index));
+        if (inputDevicePos === 'default' && inList.length) {
+          setInputDevicePos('0');
         }
-        if (outputDevice === 'default' && outList.length) {
-          setOutputDevice(String(outList[0].index));
+        if (outputDevicePos === 'default' && outList.length) {
+          setOutputDevicePos('0');
         }
       } catch (e) {}
     })();
-    // Poll only peers every 5s
+  }, []);
+
+  // Poll peers only when on main screen
+  useEffect(() => {
+    if (currentScreen !== 'main') return;
+    fetchStatus();
     const id = setInterval(fetchStatus, 5000);
     return () => clearInterval(id);
-  }, []);
+  }, [currentScreen]);
 
   // Mock audio devices - em um app real, você obteria isso via navigator.mediaDevices.enumerateDevices()
   const audioInputDevices = [
@@ -135,7 +138,7 @@ const VoiceChatApp = () => {
             </button>
             {showDropdown && (
               <div className="absolute right-0 top-full mt-2 bg-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
-                <a href="/settings.html" className="w-full block px-4 py-2 text-left text-white hover:bg-gray-600 rounded-lg flex items-center gap-2">
+                <a href="/settings.html" onClick={() => { try { fetch(`${apiBase}/ui-state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: 'settings' }) }); } catch (e) {} }} className="w-full block px-4 py-2 text-left text-white hover:bg-gray-600 rounded-lg flex items-center gap-2">
                   <Settings className="w-4 h-4" />
                   Settings
                 </a>
@@ -179,7 +182,7 @@ const VoiceChatApp = () => {
                   <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center">
                     <User className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl text-white font-medium">Incoming: {pendingOffer.peer_ip}</span>
+                  <span className="text-xl text-white font-medium">Incoming: {pendingOffer.peer_username || pendingOffer.peer_ip}</span>
                 </div>
                 <div className="flex gap-3">
                   <button onClick={async () => { try { const r = await fetch(`${apiBase}/accept`, { method: 'POST' }); if (r.ok) { const data = await r.json(); setActiveCall(data); setPendingOffer(null); } } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
@@ -263,15 +266,15 @@ const VoiceChatApp = () => {
             <div>
               <label className="block text-gray-300 mb-3 font-medium">Input Device</label>
               <select
-                value={inputDevice}
-                onChange={(e) => setInputDevice(e.target.value)}
+                value={inputDevicePos}
+                onChange={(e) => setInputDevicePos(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg border border-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
               >
                 {inputDeviceList.length === 0 && (
-                  <option value={inputDevice} className="bg-gray-600">No inputs</option>
+                  <option value={inputDevicePos === 'default' ? 'default' : inputDevicePos} className="bg-gray-600">Default input (system)</option>
                 )}
-                {inputDeviceList.map((d) => (
-                  <option key={`in-${d.index}`} value={String(d.index)} className="bg-gray-600">{d.name}</option>
+                {inputDeviceList.map((d, idx) => (
+                  <option key={`in-${d.index}`} value={String(idx)} className="bg-gray-600">{`${idx}) ${d.name}`}</option>
                 ))}
               </select>
             </div>
@@ -299,15 +302,15 @@ const VoiceChatApp = () => {
             <div>
               <label className="block text-gray-300 mb-3 font-medium">Output Device</label>
               <select
-                value={outputDevice}
-                onChange={(e) => setOutputDevice(e.target.value)}
+                value={outputDevicePos}
+                onChange={(e) => setOutputDevicePos(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-600 text-white rounded-lg border border-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
               >
                 {outputDeviceList.length === 0 && (
-                  <option value={outputDevice} className="bg-gray-600">No outputs</option>
+                  <option value={outputDevicePos === 'default' ? 'default' : outputDevicePos} className="bg-gray-600">Default output (system)</option>
                 )}
-                {outputDeviceList.map((d) => (
-                  <option key={`out-${d.index}`} value={String(d.index)} className="bg-gray-600">{d.name}</option>
+                {outputDeviceList.map((d, idx) => (
+                  <option key={`out-${d.index}`} value={String(idx)} className="bg-gray-600">{`${idx}) ${d.name}`}</option>
                 ))}
               </select>
             </div>
@@ -357,7 +360,10 @@ const VoiceChatApp = () => {
           <button
             onClick={async () => {
               try { await fetch(`${apiBase}/user`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: nickname || 'New User' }) }); } catch (e) {}
-              try { await fetch(`${apiBase}/audio-devices`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ input: Number(inputDevice), output: Number(outputDevice) }) }); } catch (e) {}
+              const inIdx = (() => { const pos = Number(inputDevicePos); return Number.isFinite(pos) && inputDeviceList[pos] ? inputDeviceList[pos].index : undefined; })();
+              const outIdx = (() => { const pos = Number(outputDevicePos); return Number.isFinite(pos) && outputDeviceList[pos] ? outputDeviceList[pos].index : undefined; })();
+              try { await fetch(`${apiBase}/audio-devices`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ input: inIdx, output: outIdx }) }); } catch (e) {}
+              try { await fetch(`${apiBase}/ui-state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: 'main' }) }); } catch (e) {}
               setCurrentScreen('main');
             }}
             className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
@@ -365,7 +371,7 @@ const VoiceChatApp = () => {
             Save Changes
           </button>
           <button
-            onClick={() => setCurrentScreen('main')}
+            onClick={async () => { try { await fetch(`${apiBase}/ui-state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: 'main' }) }); } catch (e) {} setCurrentScreen('main'); }}
             className="px-6 py-3 bg-gray-600 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors"
           >
             Cancel
@@ -376,21 +382,22 @@ const VoiceChatApp = () => {
   );
 
   return (
-    <div className="w-full h-screen bg-gray-800 flex flex-col">
+      <div className="w-full h-screen bg-gray-800 flex flex-col" style={{ WebkitAppRegion: 'no-drag' }}>
       {/* Header */}
-      <div className="bg-gray-900 px-6 py-4 flex items-center justify-between border-b border-gray-700">
-        <h1 className="text-2xl font-light text-white tracking-wider">CONCORD</h1>
-        <div className="flex gap-2">
-          <button className="w-6 h-6 bg-yellow-500 rounded hover:bg-yellow-600 transition-colors"></button>
-          <button className="w-6 h-6 bg-gray-600 border border-gray-500 hover:bg-gray-500 transition-colors"></button>
-          <button className="w-6 h-6 bg-red-500 rounded hover:bg-red-600 transition-colors"></button>
+      <div className="bg-gray-900 px-6 py-4 flex items-center justify-between border-b border-gray-700 select-none" style={{ WebkitAppRegion: 'drag' }}>
+        <h1 className="text-2xl font-light text-white tracking-wider mx-auto" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>Spea-K</h1>
+        <div className="flex gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
+          <button title="Minimize" onClick={async () => { try { await fetch(`${apiBase}/window/minimize`, { method: 'POST' }); } catch (e) {} }} className="w-6 h-6 bg-yellow-500 rounded hover:bg-yellow-600 transition-colors"></button>
+          <button title="Maximize" onClick={async () => { try { await fetch(`${apiBase}/window/maximize`, { method: 'POST' }); } catch (e) {} }} className="w-6 h-6 bg-gray-600 border border-gray-500 hover:bg-gray-500 transition-colors"></button>
+          <button title="Close" onClick={async () => { try { await fetch(`${apiBase}/window/close`, { method: 'POST' }); } catch (e) {} }} className="w-6 h-6 bg-red-500 rounded hover:bg-red-600 transition-colors"></button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden" style={{ WebkitAppRegion: 'no-drag' }}>
         {currentScreen === 'main' ? <MainScreen /> : <SettingsScreen />}
       </div>
+
 
       <style jsx>{`
         .slider::-webkit-slider-thumb {

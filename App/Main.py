@@ -52,12 +52,18 @@ sys.excepthook = _excepthook
 username = settings.get_username() or "New User"
 settings.set_username(username)
 
+# Atualiza cache de dispositivos no início e tenta reaplicar selecionados
+try:
+    settings.refresh_audio_device_cache()
+except Exception:
+    logging.exception("Falha ao atualizar cache de dispositivos de áudio")
+
 # Configurar dispositivos de áudio se não existirem
 audio_devices = settings.get_audio_devices()
 if audio_devices["input"] is None or audio_devices["output"] is None:
     print("Configurando dispositivos de áudio...")
-    input_devices = settings.get_input_devices()
-    output_devices = settings.get_output_devices()
+    input_devices = settings.get_cached_input_devices()
+    output_devices = settings.get_cached_output_devices()
     
     print("Dispositivos de entrada disponíveis:")
     for i, dev in enumerate(input_devices):
@@ -89,6 +95,7 @@ control.start()
 
 # Simple call manager state shared with API
 current_call = {"room": None}
+_ui_state = {"screen": "main"}
 
 # Volumes em porcentagem (0-100)
 _input_volume_percent = 100
@@ -123,7 +130,8 @@ def api_set_volume(inp, out):
     return changed
 
 def api_status():
-    peers = discovery.get_peers()
+    # Pause peers list when in settings
+    peers = [] if _ui_state.get("screen") == "settings" else discovery.get_peers()
     # enrich pending offer with username
     po = control.pending_offer
     if po:
@@ -231,8 +239,24 @@ def _sample_mic_level(device_index):
     try:
         import pyaudio, audioop
         pa = pyaudio.PyAudio()
+        # Valida o índice do dispositivo antes de abrir
+        try:
+            if device_index is not None:
+                info = pa.get_device_info_by_index(int(device_index))
+                if not info or int(info.get('maxInputChannels', 0) or 0) <= 0:
+                    try:
+                        pa.terminate()
+                    except Exception:
+                        pass
+                    return 0
+        except Exception:
+            try:
+                pa.terminate()
+            except Exception:
+                pass
+            return 0
         stream = pa.open(format=pyaudio.paInt16, channels=1, rate=44100, input=True, frames_per_buffer=1024,
-                         input_device_index=device_index if device_index is not None else None)
+                         input_device_index=int(device_index) if device_index is not None else None)
         try:
             data = stream.read(1024, exception_on_overflow=False)
             rms = audioop.rms(data, 2)
@@ -299,15 +323,18 @@ api = Api.ApiServer(
     hangup_fn=api_hangup,
     get_volume_fn=api_get_volume,
     set_volume_fn=api_set_volume,
-    devices_provider=lambda: {
-        "input": settings.get_input_devices(),
-        "output": settings.get_output_devices(),
-    },
+    devices_provider=lambda: settings.get_cached_devices(),
     set_devices_fn=lambda inp, out: (settings.set_audio_devices(inp, out) or True),
     get_username_fn=settings.get_username,
     set_username_fn=settings.set_username,
     get_mic_level_fn=_get_mic_level,
     test_output_fn=lambda out_idx: _play_test_tone(out_idx),
+    get_selected_devices_fn=lambda: settings.get_audio_devices(),
+    set_ui_state_fn=lambda st: _ui_state.update({"screen": str(st or "main")}),
+    window_minimize_fn=lambda: (webview.windows[0].minimize() if webview.windows else False) or True,
+    window_maximize_fn=lambda: (webview.windows[0].toggle_fullscreen() if webview.windows else False) or True,
+    window_close_fn=lambda: (webview.windows[0].destroy() if webview.windows else False) or True,
+    window_resize_fn=lambda w, h: (webview.windows[0].resize(int(w), int(h)) if (webview.windows and w and h) else False) or True,
 )
 api.start()
 
@@ -433,7 +460,7 @@ try:
 
     # Create and start webview on main thread
     try:
-        webview.create_window('Concord', 'http://127.0.0.1:5173/index.html', width=1200, height=800)
+        webview.create_window('Concord', 'http://127.0.0.1:5173/index.html', width=1200, height=800, frameless=True)
         webview.start()
     except Exception:
         logging.exception("Falha ao abrir a janela do webview")
