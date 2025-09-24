@@ -1,6 +1,7 @@
 import threading
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
+import queue
 
 
 
@@ -34,6 +35,7 @@ class ApiServer:
 		self._window_close = window_close_fn or (lambda: False)
 		self._window_resize = window_resize_fn or (lambda *_: False)
 		self._register_routes()
+		self._peer_event_subs = []
 
 	def _register_routes(self):
 		app = self._app
@@ -52,6 +54,24 @@ class ApiServer:
 		@app.get('/peers')
 		def peers():
 			return jsonify(self._peers_provider())
+
+		@app.get('/events/peers')
+		def peers_events():
+			q = queue.Queue()
+			self._peer_event_subs.append(q)
+			def stream():
+				try:
+					while True:
+						data = q.get()
+						yield f"data: {data}\n\n"
+				except GeneratorExit:
+					pass
+				finally:
+					try:
+						self._peer_event_subs.remove(q)
+					except Exception:
+						pass
+			return Response(stream(), mimetype='text/event-stream')
 
 		@app.post('/call')
 		def call():
@@ -214,5 +234,17 @@ class ApiServer:
 	def _run(self):
 		# debug=False, use_reloader=False for thread mode
 		self._app.run(host=self.host, port=self.port, debug=False, use_reloader=False)
+
+	def publish_peers_update(self):
+		try:
+			import json
+			payload = json.dumps(self._peers_provider())
+			for q in list(self._peer_event_subs):
+				try:
+					q.put(payload, block=False)
+				except Exception:
+					pass
+		except Exception:
+			pass
 
 

@@ -88,7 +88,7 @@ if audio_devices["input"] is None or audio_devices["output"] is None:
 
 # Descoberta de peers via broadcast multi-interface e negociação de portas
 self_id = str(uuid.uuid4())
-discovery = Discovery.DiscoveryService(self_id=self_id, display_name="Concord", username=username)
+discovery = Discovery.DiscoveryService(self_id=self_id, display_name="Concord", username=username, on_update=lambda: api.publish_peers_update())
 control = Discovery.ControlServer(control_port=38020)
 discovery.start()
 control.start()

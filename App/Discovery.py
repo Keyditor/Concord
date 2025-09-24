@@ -75,7 +75,7 @@ def select_local_ip_for_peer(peer_ip):
 
 class DiscoveryService:
 
-	def __init__(self, self_id, display_name="Concord", username=None, broadcast_port=37020, control_port=38020, beacon_interval=1.0):
+	def __init__(self, self_id, display_name="Concord", username=None, broadcast_port=37020, control_port=38020, beacon_interval=1.0, on_update=None):
 		self.self_id = self_id
 		self.display_name = display_name
 		self.username = username or display_name
@@ -83,6 +83,7 @@ class DiscoveryService:
 		self.control_port = control_port
 		self.beacon_interval = beacon_interval
 		self.registry = PeerRegistry(self_id)
+		self._on_update = on_update
 		self._running = False
 		self._beacon_thread = threading.Thread(target=self._beacon_loop)
 		self._listen_thread = threading.Thread(target=self._listen_loop)
@@ -165,10 +166,20 @@ class DiscoveryService:
 								shared = net
 								break
 						self.registry.upsert_peer(msg["id"], peer_ip, int(msg["control_port"]), msg.get("name", "Concord"), msg.get("username"))
+						if self._on_update:
+							try:
+								self._on_update()
+							except Exception:
+								pass
 					elif msg.get("type") == "BYE" and "id" in msg:
 						# Remove peer from registry on goodbye
 						with self.registry._lock:
 							self.registry._peers.pop(msg["id"], None)
+						if self._on_update:
+							try:
+								self._on_update()
+							except Exception:
+								pass
 						# annotate grouping by network (optional: stored externally)
 				except Exception:
 					pass

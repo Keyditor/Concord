@@ -81,12 +81,19 @@ const VoiceChatApp = () => {
     })();
   }, []);
 
-  // Poll peers only when on main screen
+  // Poll peers only when on main screen; also subscribe to SSE for instant updates
   useEffect(() => {
     if (currentScreen !== 'main') return;
     fetchStatus();
-    const id = setInterval(fetchStatus, 5000);
-    return () => clearInterval(id);
+    let es;
+    try {
+      es = new EventSource(`${apiBase}/events/peers`);
+      es.onmessage = (ev) => {
+        try { const list = JSON.parse(ev.data); if (Array.isArray(list)) setPeers(list); } catch (e) {}
+      };
+    } catch (e) {}
+    const id = setInterval(fetchStatus, 15000);
+    return () => { clearInterval(id); try { es && es.close(); } catch (e) {} };
   }, [currentScreen]);
 
   // Mock audio devices - em um app real, você obteria isso via navigator.mediaDevices.enumerateDevices()
