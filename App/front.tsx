@@ -16,7 +16,7 @@ const ArrowLeft = ({ className = '' }) => <span className={className}>⬅️</sp
 const ChevronDown = ({ className = '' }) => <span className={className}>▾</span>;
 
 const VoiceChatApp = () => {
-  const { useEffect, useState } = React;
+  const { useEffect, useState, memo } = React;
   const [currentScreen, setCurrentScreen] = React.useState('main');
   const [activeCall, setActiveCall] = React.useState(null);
   const [isMuted, setIsMuted] = React.useState(false);
@@ -33,6 +33,7 @@ const VoiceChatApp = () => {
   const [pendingOffer, setPendingOffer] = React.useState(null);
   const [localInterfaces, setLocalInterfaces] = React.useState([]);
   const [selectedNetwork, setSelectedNetwork] = React.useState('all');
+  const [directIp, setDirectIp] = React.useState('');
   const apiBase = 'http://127.0.0.1:5001';
 
   const fetchVolume = async () => {
@@ -136,142 +137,29 @@ const VoiceChatApp = () => {
     // setActiveCall(null); // No longer needed, status event will handle it
   };
 
-  const MainScreen = () => (
-    <div className="flex h-full">
-      {/* Left Panel - Peers */}
-      <div className="w-1/2 p-6 border-r border-gray-600">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-light text-white">Peers</h2>
-            {localInterfaces.length > 0 && (
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedNetwork}
-                  onChange={(e) => setSelectedNetwork(e.target.value)}
-                  className="bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600 focus:outline-none"
-                >
-                  <option value="all">All Networks</option>
-                  {localInterfaces.map(iface => (
-                    <option key={iface.network} value={iface.network}>{iface.network}</option>
-                  ))}
-                </select>
-                <button onClick={async () => { try { await fetch(`${apiBase}/peers/discover`, { method: 'POST' }); } catch (e) {} }} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors">
-                  Buscar
-                </button>
+  // Memoized PeerList to prevent re-renders on every parent state change
+  const PeerList = memo(({ peers, onCall }) => {
+    return (
+      <div className="space-y-4 overflow-y-auto flex-grow pr-2">
+        {peers.map((peer) => (
+          <div key={peer.ip} className="flex items-center justify-between p-4 rounded-xl bg-gray-700/50 hover:bg-gray-700 transition-colors">
+            <div className="flex items-center gap-4">
+              <div className={`w-12 h-12 rounded-full ${peer.color} flex items-center justify-center relative`}>
+                <User className="w-6 h-6 text-white" />
+                {peer.online && (
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-gray-800"></div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="relative">
-            <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="p-2 rounded-lg bg-gray-600 hover:bg-gray-500 transition-colors"
-            >
-              <ChevronDown className="w-5 h-5 text-white" />
-            </button>
-            {showDropdown && (
-              <div className="absolute right-0 top-full mt-2 bg-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
-                <a href="/settings.html" onClick={() => { try { fetch(`${apiBase}/ui-state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: 'settings' }) }); } catch (e) {} }} className="w-full block px-4 py-2 text-left text-white hover:bg-gray-600 rounded-lg flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  Settings
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="space-y-4">
-          {peers.map((peer) => (
-            <div key={peer.ip} className="flex items-center justify-between p-4 rounded-xl bg-gray-700/50 hover:bg-gray-700 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-full ${peer.color} flex items-center justify-center relative`}>
-                  <User className="w-6 h-6 text-white" />
-                  {peer.online && (
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-gray-800"></div>
-                  )}
-                </div>
-                <span className="text-white font-medium">{peer.username || peer.ip}</span>
-              </div>
-              <button
-                onClick={() => handleCall(peer)}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-              >
-                Call
-              </button>
+              <span className="text-white font-medium">{peer.username || peer.ip}</span>
             </div>
-          ))}
-        </div>
+            <button onClick={() => onCall(peer)} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors">
+              {activeCall ? 'Invite' : 'Call'}
+            </button>
+          </div>
+        ))}
       </div>
-
-      {/* Right Panel */}
-      <div className="w-1/2 p-6 flex flex-col">
-        {/* Active Calls */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-light text-white mb-6">Active Calls</h2>
-          {pendingOffer && !activeCall ? (
-            <div className="p-6 rounded-xl bg-gray-700/50 border border-yellow-600 mb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xl text-white font-medium">Incoming: {pendingOffer.peer_username || pendingOffer.peer_ip}</span>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={async () => { try { await fetch(`${apiBase}/accept`, { method: 'POST' }); } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
-                  <button onClick={async () => { try { await fetch(`${apiBase}/reject`, { method: 'POST' }); } catch (e) {} setPendingOffer(null); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white">Reject</button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-          {activeCall ? (
-            <div className="p-6 rounded-xl bg-gray-700/50 border border-gray-600">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
-                    <User className="w-6 h-6 text-white" />
-                  </div>
-                <span className="text-xl text-white font-medium">{typeof activeCall === 'object' ? (activeCall.remote_username || activeCall.remote_ip) : String(activeCall)}</span>
-                </div>
-                <button
-                  onClick={handleEndCall}
-                  className="p-3 bg-red-600 hover:bg-red-700 rounded-full transition-colors"
-                >
-                  <PhoneOff className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 rounded-xl bg-gray-700/20 border-2 border-dashed border-gray-600 text-center">
-              <Phone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-400">No active calls</p>
-            </div>
-          )}
-        </div>
-
-        {/* Controls */}
-        <div className="mt-auto">
-          <div className="flex justify-center gap-4 mb-6">
-            <button
-              onClick={() => setIsMuted(!isMuted)}
-              className={`p-4 rounded-full transition-colors ${
-                isMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'
-              }`}
-            >
-              {isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
-            </button>
-            <button
-              onClick={() => setIsDeafened(!isDeafened)}
-              className={`p-4 rounded-full transition-colors ${
-                isDeafened ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'
-              }`}
-            >
-              {isDeafened ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  });
 
   const SettingsScreen = () => (
     <div className="p-8 max-w-2xl mx-auto">
@@ -422,7 +310,27 @@ const VoiceChatApp = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-hidden" style={{ WebkitAppRegion: 'no-drag' }}>
-        {currentScreen === 'main' ? <MainScreen /> : <SettingsScreen />}
+        {currentScreen === 'main' ? <MainScreen
+          peers={peers}
+          onCall={handleCall}
+          activeCall={activeCall}
+          localInterfaces={localInterfaces}
+          selectedNetwork={selectedNetwork}
+          setSelectedNetwork={setSelectedNetwork}
+          showDropdown={showDropdown}
+          setShowDropdown={setShowDropdown}
+          apiBase={apiBase}
+          directIp={directIp}
+          setDirectIp={setDirectIp}
+          onCallIp={handleCallIp}
+          pendingOffer={pendingOffer}
+          onEndCall={handleEndCall}
+          isMuted={isMuted}
+          setIsMuted={setIsMuted}
+          isDeafened={isDeafened}
+          setIsDeafened={setIsDeafened}
+        
+        /> : <SettingsScreen />}
       </div>
 
 
@@ -460,3 +368,126 @@ try {
     root.render(React.createElement(VoiceChatApp));
   }
 } catch (e) {}
+
+// --- Components moved outside to be stable ---
+
+const PeerList = React.memo(({ peers, onCall, activeCall }) => {
+  return (
+    <div className="space-y-4 overflow-y-auto flex-grow pr-2">
+      {peers.map((peer) => (
+        <div key={peer.ip} className="flex items-center justify-between p-4 rounded-xl bg-gray-700/50 hover:bg-gray-700 transition-colors">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-full ${peer.color} flex items-center justify-center relative`}>
+              <User className="w-6 h-6 text-white" />
+              {peer.online && (
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-gray-800"></div>
+              )}
+            </div>
+            <span className="text-white font-medium">{peer.username || peer.ip}</span>
+          </div>
+          <button onClick={() => onCall(peer)} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors">
+            {activeCall ? 'Invite' : 'Call'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+});
+
+const MainScreen = ({ peers, onCall, activeCall, localInterfaces, selectedNetwork, setSelectedNetwork, showDropdown, setShowDropdown, apiBase, directIp, setDirectIp, onCallIp, pendingOffer, onEndCall, isMuted, setIsMuted, isDeafened, setIsDeafened }) => {
+  return (
+  <div className="flex h-full">
+    {/* Left Panel - Peers */}
+    <div className="w-1/2 p-6 border-r border-gray-600 flex flex-col">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-light text-white">Peers</h2>
+          {localInterfaces.length > 0 && (
+            <div className="flex items-center gap-2">
+              <select value={selectedNetwork} onChange={(e) => setSelectedNetwork(e.target.value)} className="bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600 focus:outline-none">
+                <option value="all">All Networks</option>
+                {localInterfaces.map(iface => (<option key={iface.network} value={iface.network}>{iface.network}</option>))}
+              </select>
+              <button onClick={async () => { try { await fetch(`${apiBase}/peers/discover`, { method: 'POST' }); } catch (e) {} }} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors">
+                Buscar
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <button onClick={() => setShowDropdown(!showDropdown)} className="p-2 rounded-lg bg-gray-600 hover:bg-gray-500 transition-colors">
+            <ChevronDown className="w-5 h-5 text-white" />
+          </button>
+          {showDropdown && (
+            <div className="absolute right-0 top-full mt-2 bg-gray-700 rounded-lg shadow-lg z-10 min-w-[120px]">
+              <a href="/settings.html" onClick={() => { try { fetch(`${apiBase}/ui-state`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ state: 'settings' }) }); } catch (e) {} }} className="w-full block px-4 py-2 text-left text-white hover:bg-gray-600 rounded-lg flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Settings
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <PeerList peers={peers} onCall={onCall} activeCall={activeCall} />
+
+      {/* Direct Connect */}
+      <div className="mt-auto pt-6 border-t border-gray-600 flex-shrink-0">
+        <h3 className="text-lg font-light text-white mb-3">Direct Connect</h3>
+        <div className="flex gap-2">
+          <input type="text" value={directIp} onChange={(e) => setDirectIp(e.target.value)} placeholder="Enter peer IP address" className="flex-1 px-3 py-2 bg-gray-700 text-white rounded-lg border border-gray-500 focus:outline-none" />
+          <button onClick={() => onCallIp(directIp, 38020)} disabled={!directIp.trim()} className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white rounded-lg font-medium">
+            Connect
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* Right Panel */}
+    <div className="w-1/2 p-6 flex flex-col">
+      {/* Active Calls */}
+      <div className="mb-8">
+        <h2 className="text-2xl font-light text-white mb-6">Active Calls</h2>
+        {pendingOffer && !activeCall ? (
+          <div className="p-6 rounded-xl bg-gray-700/50 border border-yellow-600 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center"><User className="w-6 h-6 text-white" /></div>
+                <span className="text-xl text-white font-medium">Incoming: {pendingOffer.peer_username || pendingOffer.peer_ip}</span>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={async () => { try { await fetch(`${apiBase}/accept`, { method: 'POST' }); } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
+                <button onClick={async () => { try { await fetch(`${apiBase}/reject`, { method: 'POST' }); } catch (e) {} }} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white">Reject</button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {activeCall ? (
+          <div className="p-6 rounded-xl bg-gray-700/50 border border-gray-600">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center"><User className="w-6 h-6 text-white" /></div>
+                <span className="text-xl text-white font-medium">{typeof activeCall === 'object' ? (activeCall.remote_username || activeCall.remote_ip) : String(activeCall)}</span>
+              </div>
+              <button onClick={onEndCall} className="p-3 bg-red-600 hover:bg-red-700 rounded-full transition-colors"><PhoneOff className="w-6 h-6 text-white" /></button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 rounded-xl bg-gray-700/20 border-2 border-dashed border-gray-600 text-center">
+            <Phone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-400">No active calls</p>
+          </div>
+        )}
+      </div>
+
+      {/* Controls */}
+      <div className="mt-auto">
+        <div className="flex justify-center gap-4 mb-6">
+          <button onClick={() => setIsMuted(!isMuted)} className={`p-4 rounded-full transition-colors ${isMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'}`}>{isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}</button>
+          <button onClick={() => setIsDeafened(!isDeafened)} className={`p-4 rounded-full transition-colors ${isDeafened ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'}`}>{isDeafened ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  );
+};

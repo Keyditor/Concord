@@ -1594,3 +1594,120 @@ OSError: [WinError 10048] Normalmente é permitida apenas uma utilização de ca
 2025-10-01 16:31:32,928 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 16:31:32] "POST /peers/discover HTTP/1.1" 200 -
 2025-10-01 16:31:35,483 INFO Thread-19 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 16:31:35] "GET /events/peers?network=10.32.0.0/16 HTTP/1.1" 200 -
 2025-10-01 16:31:35,534 INFO Thread-20 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 16:31:35] "GET /events/status HTTP/1.1" 200 -
+2025-10-01 17:35:06,903 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-10-01 17:35:06,905 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-10-01 17:35:11,815 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:35:11] "GET /events/status HTTP/1.1" 200 -
+2025-10-01 17:35:11,869 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:35:11] "GET /user HTTP/1.1" 200 -
+2025-10-01 17:35:11,970 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:35:11] "GET /volume HTTP/1.1" 200 -
+2025-10-01 17:35:12,043 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:35:12] "GET /events/peers HTTP/1.1" 200 -
+2025-10-01 17:35:12,120 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:35:12] "GET /devices HTTP/1.1" 200 -
+2025-10-01 17:35:30,194 INFO Thread-13 (process_request_thread) root: Adicionando peer à sala: 10.32.0.80:52143
+2025-10-01 17:35:30,198 ERROR Thread-13 (process_request_thread) Api: Exception on /accept [POST]
+Traceback (most recent call last):
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\IzzySuporte\AppData\Local\Programs\Python\Python311\Lib\site-packages\flask\app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\Api.py", line 124, in accept
+    ok, info = self._accept()
+               ^^^^^^^^^^^^^^
+  File "C:\PyProjects\Spea-K\Concord\app\main.py", line 282, in api_accept
+    room.add_peer(accepted['peer_ip'], accepted['peer_media_port'])
+  File "C:\PyProjects\Spea-K\Concord\app\Voip.py", line 62, in add_peer
+    self._peers[peer_id] = {"addr": (remote_ip, remote_port), "last_seen": time.time()}
+                                                                           ^^^^
+NameError: name 'time' is not defined
+2025-10-01 17:35:30,240 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:35:30] "[35m[1mPOST /accept HTTP/1.1[0m" 500 -
+2025-10-01 17:37:02,155 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-10-01 17:37:02,155 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-10-01 17:37:06,005 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:37:06] "GET /user HTTP/1.1" 200 -
+2025-10-01 17:37:06,034 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:37:06] "GET /volume HTTP/1.1" 200 -
+2025-10-01 17:37:06,149 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:37:06] "GET /events/status HTTP/1.1" 200 -
+2025-10-01 17:37:06,240 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:37:06] "GET /devices HTTP/1.1" 200 -
+2025-10-01 17:37:07,139 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:37:07] "GET /events/peers HTTP/1.1" 200 -
+2025-10-01 17:37:52,264 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:37:52] "OPTIONS /call HTTP/1.1" 200 -
+2025-10-01 17:37:57,111 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:37:57] "POST /call HTTP/1.1" 200 -
+2025-10-01 17:38:04,632 INFO Thread-17 (process_request_thread) root: Enviada notificação de HANGUP.
+2025-10-01 17:38:04,722 INFO Thread-17 (process_request_thread) root: VoIP encerrado.
+2025-10-01 17:38:04,740 INFO Thread-17 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:38:04] "POST /hangup HTTP/1.1" 200 -
+2025-10-01 17:38:09,576 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:38:09] "POST /accept HTTP/1.1" 200 -
+2025-10-01 17:38:15,855 INFO Thread-21 (process_request_thread) root: Enviada notificação de HANGUP.
+2025-10-01 17:38:15,892 INFO Thread-21 (process_request_thread) root: VoIP encerrado.
+2025-10-01 17:38:15,902 INFO Thread-21 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:38:15] "POST /hangup HTTP/1.1" 200 -
+2025-10-01 17:43:30,202 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-10-01 17:43:30,204 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-10-01 17:43:34,239 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:43:34] "GET /events/status HTTP/1.1" 200 -
+2025-10-01 17:43:34,258 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:43:34] "GET /user HTTP/1.1" 200 -
+2025-10-01 17:43:34,305 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:43:34] "GET /volume HTTP/1.1" 200 -
+2025-10-01 17:43:34,327 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:43:34] "GET /devices HTTP/1.1" 200 -
+2025-10-01 17:43:35,173 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:43:35] "GET /events/peers HTTP/1.1" 200 -
+2025-10-01 17:46:16,855 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-10-01 17:46:16,855 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-10-01 17:46:20,693 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:46:20] "GET /volume HTTP/1.1" 200 -
+2025-10-01 17:46:20,695 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:46:20] "GET /user HTTP/1.1" 200 -
+2025-10-01 17:46:20,738 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:46:20] "GET /events/status HTTP/1.1" 200 -
+2025-10-01 17:46:20,790 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:46:20] "GET /devices HTTP/1.1" 200 -
+2025-10-01 17:46:21,836 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:46:21] "GET /events/peers HTTP/1.1" 200 -
+2025-10-01 17:47:42,033 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-10-01 17:47:42,034 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-10-01 17:49:16,951 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-10-01 17:49:16,957 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-10-01 17:53:17,140 INFO Thread-4 (_run) werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2025-10-01 17:53:17,141 INFO Thread-4 (_run) werkzeug: [33mPress CTRL+C to quit[0m
+2025-10-01 17:53:21,057 INFO Thread-9 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:21] "GET /volume HTTP/1.1" 200 -
+2025-10-01 17:53:21,058 INFO Thread-8 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:21] "GET /user HTTP/1.1" 200 -
+2025-10-01 17:53:21,093 INFO Thread-11 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:21] "GET /events/status HTTP/1.1" 200 -
+2025-10-01 17:53:21,139 INFO Thread-12 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:21] "GET /devices HTTP/1.1" 200 -
+2025-10-01 17:53:22,060 INFO Thread-10 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:22] "GET /events/peers HTTP/1.1" 200 -
+2025-10-01 17:53:34,528 INFO Thread-13 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:34] "OPTIONS /call HTTP/1.1" 200 -
+2025-10-01 17:53:40,061 INFO Thread-15 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:40] "OPTIONS /call HTTP/1.1" 200 -
+2025-10-01 17:53:44,645 ERROR Thread-14 (process_request_thread) root: API /call failed: Peer rejected or no answer
+2025-10-01 17:53:44,646 INFO Thread-14 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:44] "[31m[1mPOST /call HTTP/1.1[0m" 409 -
+2025-10-01 17:53:44,731 INFO Thread-19 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:44] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:53:44,795 INFO Thread-20 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:44] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:53:44,830 INFO Thread-21 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:44] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:53:50,173 ERROR Thread-16 (process_request_thread) root: API /call failed: Peer rejected or no answer
+2025-10-01 17:53:50,178 INFO Thread-16 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:50] "[31m[1mPOST /call HTTP/1.1[0m" 409 -
+2025-10-01 17:53:50,594 ERROR Thread-17 (process_request_thread) root: API /call failed: Peer rejected or no answer
+2025-10-01 17:53:50,595 INFO Thread-17 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:50] "[31m[1mPOST /call HTTP/1.1[0m" 409 -
+2025-10-01 17:53:51,390 ERROR Thread-18 (process_request_thread) root: API /call failed: Peer rejected or no answer
+2025-10-01 17:53:51,393 INFO Thread-18 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:53:51] "[31m[1mPOST /call HTTP/1.1[0m" 409 -
+2025-10-01 17:54:22,202 INFO Thread-22 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:22] "GET /events/peers?network=10.32.0.0/16 HTTP/1.1" 200 -
+2025-10-01 17:54:22,248 INFO Thread-23 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:22] "GET /events/status HTTP/1.1" 200 -
+2025-10-01 17:54:27,639 INFO Thread-24 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:27] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:30,280 INFO Thread-25 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:30] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:40,478 INFO Thread-26 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:40] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:40,642 INFO Thread-27 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:40] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:40,874 INFO Thread-28 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:40] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:41,297 INFO Thread-29 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:41] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:41,564 INFO Thread-30 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:41] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:41,761 INFO Thread-31 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:41] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:41,965 INFO Thread-32 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:41] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:42,093 INFO Thread-33 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:42] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:42,413 INFO Thread-34 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:42] "POST /peers/discover HTTP/1.1" 200 -
+2025-10-01 17:54:49,144 INFO Thread-35 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:54:49] "POST /accept HTTP/1.1" 200 -
+2025-10-01 17:55:00,187 INFO Thread-37 (receive_audio) root: Recebida notificação de HANGUP. Encerrando a chamada.
+2025-10-01 17:55:02,378 INFO Thread-38 (process_request_thread) root: Enviada notificação de HANGUP.
+2025-10-01 17:55:02,420 INFO Thread-38 (process_request_thread) root: VoIP encerrado.
+2025-10-01 17:55:02,435 INFO Thread-38 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:55:02] "POST /hangup HTTP/1.1" 200 -
+2025-10-01 17:55:04,806 INFO Thread-39 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:55:04] "OPTIONS /call HTTP/1.1" 200 -
+2025-10-01 17:55:07,190 INFO Thread-40 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:55:07] "POST /call HTTP/1.1" 200 -
+2025-10-01 17:55:10,038 INFO Thread-42 (receive_audio) root: Recebida notificação de HANGUP. Encerrando a chamada.
+2025-10-01 17:55:11,058 INFO Thread-43 (process_request_thread) root: Enviada notificação de HANGUP.
+2025-10-01 17:55:11,240 INFO Thread-43 (process_request_thread) root: VoIP encerrado.
+2025-10-01 17:55:11,278 INFO Thread-43 (process_request_thread) werkzeug: 127.0.0.1 - - [01/Oct/2025 17:55:11] "POST /hangup HTTP/1.1" 200 -
