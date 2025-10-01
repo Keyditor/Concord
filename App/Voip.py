@@ -60,12 +60,12 @@ class VoipRoom:
 				# Captura áudio do microfone
 				data = self.input_stream.read(CHUNK, exception_on_overflow=False)
 				# Aplica volume de entrada
-				with self._vol_lock:
-					in_vol = self._input_volume
-				if in_vol != 1.0:
+				with self._vol_lock: # Garante que o lock seja liberado
+					input_vol = self._input_volume
+				if input_vol != 1.0:
 					try:
-						data = audioop.mul(data, 2, in_vol)
-					except Exception:
+						data = audioop.mul(data, 2, input_vol)
+					except audioop.error:
 						pass
 				# Envia para o IP e porta remotos
 				self.sock.sendto(data, (self.REMOTE_IP, self.REMOTE_PORT))
@@ -79,12 +79,12 @@ class VoipRoom:
 				# Recebe dados UDP
 				data, addr = self.sock.recvfrom(CHUNK * 2)  # O buffer pode ser ajustado
 				# Aplica volume de saída
-				with self._vol_lock:
-					out_vol = self._output_volume
-				if out_vol != 1.0:
+				with self._vol_lock: # Garante que o lock seja liberado
+					output_vol = self._output_volume
+				if output_vol != 1.0:
 					try:
-						data = audioop.mul(data, 2, out_vol)
-					except Exception:
+						data = audioop.mul(data, 2, output_vol)
+					except audioop.error:
 						pass
 				# Reproduz o áudio recebido
 				self.output_stream.write(data)

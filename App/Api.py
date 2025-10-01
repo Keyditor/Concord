@@ -36,6 +36,7 @@ class ApiServer:
 		self._window_resize = window_resize_fn or (lambda *_: False)
 		self._register_routes()
 		self._peer_event_subs = []
+		self._status_event_subs = []
 
 	def _register_routes(self):
 		app = self._app
@@ -69,6 +70,26 @@ class ApiServer:
 				finally:
 					try:
 						self._peer_event_subs.remove(q)
+					except Exception:
+						pass
+			return Response(stream(), mimetype='text/event-stream')
+
+		@app.get('/events/status')
+		def status_events():
+			q = queue.Queue()
+			self._status_event_subs.append(q)
+			def stream():
+				try:
+					# Send initial state
+					yield f"data: {self.publish_status_update(q)}\n\n"
+					while True:
+						data = q.get()
+						yield f"data: {data}\n\n"
+				except GeneratorExit:
+					pass
+				finally:
+					try:
+						self._status_event_subs.remove(q)
 					except Exception:
 						pass
 			return Response(stream(), mimetype='text/event-stream')
@@ -247,4 +268,17 @@ class ApiServer:
 		except Exception:
 			pass
 
-
+	def publish_status_update(self, single_q=None):
+		try:
+			import json
+			payload = json.dumps(self._status_provider())
+			subs = [single_q] if single_q else list(self._status_event_subs)
+			for q in subs:
+				if not q: continue
+				try:
+					q.put(payload, block=False)
+				except Exception:
+					pass
+			return payload
+		except Exception:
+			return "{}"

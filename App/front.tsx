@@ -33,19 +33,6 @@ const VoiceChatApp = () => {
   const [pendingOffer, setPendingOffer] = React.useState(null);
   const apiBase = 'http://127.0.0.1:5001';
 
-  const fetchStatus = async () => {
-    try {
-      const resp = await fetch(`${apiBase}/status`);
-      const data = await resp.json();
-      // remove peers that are no longer in backend list
-      const freshPeers = Array.isArray(data.peers) ? data.peers : [];
-      setPeers(freshPeers);
-      setPendingOffer(data.pending_offer || null);
-    } catch (e) {
-      // ignore
-    }
-  };
-
   const fetchVolume = async () => {
     try {
       const resp = await fetch(`${apiBase}/volume`);
@@ -81,19 +68,34 @@ const VoiceChatApp = () => {
     })();
   }, []);
 
-  // Poll peers only when on main screen; also subscribe to SSE for instant updates
+  // Subscribe to real-time events for peers and status
   useEffect(() => {
     if (currentScreen !== 'main') return;
-    fetchStatus();
-    let es;
+
+    // Subscribe to peer updates
+    let peer_es;
     try {
-      es = new EventSource(`${apiBase}/events/peers`);
-      es.onmessage = (ev) => {
+      peer_es = new EventSource(`${apiBase}/events/peers`);
+      peer_es.onmessage = (ev) => {
         try { const list = JSON.parse(ev.data); if (Array.isArray(list)) setPeers(list); } catch (e) {}
       };
     } catch (e) {}
-    const id = setInterval(fetchStatus, 15000);
-    return () => { clearInterval(id); try { es && es.close(); } catch (e) {} };
+
+    // Subscribe to status updates (calls, pending offers)
+    let status_es;
+    try {
+      status_es = new EventSource(`${apiBase}/events/status`);
+      status_es.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          setPendingOffer(data.pending_offer || null);
+          setActiveCall(data.in_call ? data.current_call : null);
+        } catch (e) {}
+      };
+    } catch (e) {}
+
+    // Cleanup function to close connections when component unmounts or screen changes
+    return () => { try { peer_es && peer_es.close(); status_es && status_es.close(); } catch (e) {} };
   }, [currentScreen]);
 
   // Mock audio devices - em um app real, você obteria isso via navigator.mediaDevices.enumerateDevices()
@@ -116,7 +118,7 @@ const VoiceChatApp = () => {
       const resp = await fetch(`${apiBase}/call`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ip, control_port }) });
       if (resp.ok) {
         const data = await resp.json();
-        setActiveCall(data);
+        // setActiveCall(data); // No longer needed, status event will handle it
       }
     } catch (e) {}
   };
@@ -127,7 +129,7 @@ const VoiceChatApp = () => {
 
   const handleEndCall = async () => {
     try { await fetch(`${apiBase}/hangup`, { method: 'POST' }); } catch (e) {}
-    setActiveCall(null);
+    // setActiveCall(null); // No longer needed, status event will handle it
   };
 
   const MainScreen = () => (
@@ -192,7 +194,7 @@ const VoiceChatApp = () => {
                   <span className="text-xl text-white font-medium">Incoming: {pendingOffer.peer_username || pendingOffer.peer_ip}</span>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={async () => { try { const r = await fetch(`${apiBase}/accept`, { method: 'POST' }); if (r.ok) { const data = await r.json(); setActiveCall(data); setPendingOffer(null); } } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
+                  <button onClick={async () => { try { await fetch(`${apiBase}/accept`, { method: 'POST' }); } catch (e) {} }} className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white">Accept</button>
                   <button onClick={async () => { try { await fetch(`${apiBase}/reject`, { method: 'POST' }); } catch (e) {} setPendingOffer(null); }} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-white">Reject</button>
                 </div>
               </div>
@@ -390,14 +392,9 @@ const VoiceChatApp = () => {
 
   return (
       <div className="w-full h-screen bg-gray-800 flex flex-col" style={{ WebkitAppRegion: 'no-drag' }}>
-      {/* Header */}
-      <div className="bg-gray-900 px-6 py-4 flex items-center justify-between border-b border-gray-700 select-none" style={{ WebkitAppRegion: 'drag' }}>
-        <h1 className="text-2xl font-light text-white tracking-wider mx-auto" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>Spea-K</h1>
-        <div className="flex gap-2" style={{ WebkitAppRegion: 'no-drag' }}>
-          <button title="Minimize" onClick={async () => { try { await fetch(`${apiBase}/window/minimize`, { method: 'POST' }); } catch (e) {} }} className="w-6 h-6 bg-yellow-500 rounded hover:bg-yellow-600 transition-colors"></button>
-          <button title="Maximize" onClick={async () => { try { await fetch(`${apiBase}/window/maximize`, { method: 'POST' }); } catch (e) {} }} className="w-6 h-6 bg-gray-600 border border-gray-500 hover:bg-gray-500 transition-colors"></button>
-          <button title="Close" onClick={async () => { try { await fetch(`${apiBase}/window/close`, { method: 'POST' }); } catch (e) {} }} className="w-6 h-6 bg-red-500 rounded hover:bg-red-600 transition-colors"></button>
-        </div>
+      {/* Header (sem a barra customizada, pois a nativa foi reativada) */}
+      <div className="bg-gray-900 px-6 py-4 flex items-center justify-center border-b border-gray-700 select-none">
+        <h1 className="text-xl font-light text-white tracking-wider" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>Spea-K</h1>
       </div>
 
       {/* Content */}

@@ -88,8 +88,8 @@ if audio_devices["input"] is None or audio_devices["output"] is None:
 
 # Descoberta de peers via broadcast multi-interface e negociação de portas
 self_id = str(uuid.uuid4())
-discovery = Discovery.DiscoveryService(self_id=self_id, display_name="Concord", username=username, on_update=lambda: api.publish_peers_update())
-control = Discovery.ControlServer(control_port=38020)
+discovery = Discovery.DiscoveryService(self_id=self_id, display_name="Concord", username=username, beacon_interval=5.0, on_update=lambda: api.publish_peers_update())
+control = Discovery.ControlServer(control_port=38020, on_update=lambda: api.publish_status_update())
 discovery.start()
 control.start()
 
@@ -187,6 +187,7 @@ def api_start_call(ip, ctrl_port):
         pass
     info = {"remote_ip": ip, "local_ip": result['local_ip'], "remote_username": remote_name}
     current_call["info"] = info
+    api.publish_status_update() # Notifica o frontend que a chamada foi estabelecida
     return True, info
 
 def api_accept():
@@ -220,10 +221,12 @@ def api_accept():
         pass
     info = {"remote_ip": accepted['peer_ip'], "local_ip": accepted['local_ip'], "remote_username": remote_name}
     current_call["info"] = info
+    api.publish_status_update() # Notifica o frontend que a chamada foi aceita
     return True, info
 
 def api_reject():
-    return control.reject_pending()
+    ok = control.reject_pending()
+    return ok
 
 def api_hangup():
     if current_call["room"] is None:
@@ -233,6 +236,7 @@ def api_hangup():
     finally:
         current_call["room"] = None
         current_call["info"] = None
+    api.publish_status_update() # Notifica o frontend que a chamada foi encerrada
     return True
 
 def _sample_mic_level(device_index):
@@ -311,6 +315,16 @@ def _play_test_tone(output_device_index):
     except Exception:
         return False
 
+def api_set_ui_state(state):
+    """Atualiza o estado da UI e dispara ações com base na tela."""
+    _ui_state.update({"screen": str(state or "main")})
+    if state == "settings":
+        try:
+            logging.info("Atualizando cache de dispositivos de áudio ao entrar nas configurações...")
+            settings.refresh_audio_device_cache()
+        except Exception:
+            logging.exception("Falha ao atualizar o cache de dispositivos de áudio.")
+
 api = Api.ApiServer(
     host="127.0.0.1",
     port=5001,
@@ -330,7 +344,7 @@ api = Api.ApiServer(
     get_mic_level_fn=_get_mic_level,
     test_output_fn=lambda out_idx: _play_test_tone(out_idx),
     get_selected_devices_fn=lambda: settings.get_audio_devices(),
-    set_ui_state_fn=lambda st: _ui_state.update({"screen": str(st or "main")}),
+    set_ui_state_fn=api_set_ui_state,
     window_minimize_fn=lambda: (webview.windows[0].minimize() if webview.windows else False) or True,
     window_maximize_fn=lambda: (webview.windows[0].toggle_fullscreen() if webview.windows else False) or True,
     window_close_fn=lambda: (webview.windows[0].destroy() if webview.windows else False) or True,
@@ -460,7 +474,7 @@ try:
 
     # Create and start webview on main thread
     try:
-        webview.create_window('Concord', 'http://127.0.0.1:5173/index.html', width=1200, height=800, frameless=True)
+        webview.create_window('Concord', 'http://127.0.0.1:5173/index.html', width=1200, height=800, frameless=False)
         webview.start()
     except Exception:
         logging.exception("Falha ao abrir a janela do webview")
@@ -473,4 +487,3 @@ finally:
         pass
     discovery.stop()
     control.stop()
-

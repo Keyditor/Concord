@@ -27,7 +27,7 @@ class PeerRegistry:
 				"last_seen": time.time(),
 			}
 
-	def list_active(self, max_age_seconds=5.0):
+	def list_active(self, max_age_seconds=15.0):
 		now = time.time()
 		with self._lock:
 			return [p for p in self._peers.values() if now - p["last_seen"] <= max_age_seconds]
@@ -110,18 +110,17 @@ class DiscoveryService:
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 		sock.settimeout(0.5)
-		payload = {
-			"type": "BEACON",
-			"id": self.self_id,
-			"name": self.display_name,
-			"username": self.username,
-			"control_port": self.control_port,
-			"nets": [i["network"] for i in get_local_ipv4_interfaces()],
-		}
+		
 		while self._running:
 			try:
+				interfaces = get_local_ipv4_interfaces()
+				payload = {
+					"type": "BEACON", "id": self.self_id, "name": self.display_name,
+					"username": self.username, "control_port": self.control_port,
+					"nets": [i["network"] for i in interfaces],
+				}
 				message = json.dumps(payload).encode("utf-8")
-				for iface in get_local_ipv4_interfaces():
+				for iface in interfaces:
 					bcast = iface["broadcast"] or "255.255.255.255"
 					sock.sendto(message, (bcast, self.broadcast_port))
 				time.sleep(self.beacon_interval)
@@ -149,6 +148,7 @@ class DiscoveryService:
 	def _listen_loop(self):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 		sock.bind(("", self.broadcast_port))
 		sock.settimeout(0.5)
 		while self._running:
@@ -199,12 +199,14 @@ def find_free_udp_port(bind_ip):
 
 class ControlServer:
 
-	def __init__(self, control_port):
+	def __init__(self, control_port, on_update=None):
 		self.control_port = control_port
 		self._running = False
 		self._thread = threading.Thread(target=self._serve)
 		self._thread.daemon = True
 		self.pending_offer = None
+		self._on_update = on_update
+		self._lock = threading.Lock()
 
 	def start(self):
 		self._running = True
@@ -231,15 +233,22 @@ class ControlServer:
 					if msg.get("type") == "OFFER" and "caller_media_port" in msg:
 						# armazenar oferta para ação do usuário (aceitar/recusar)
 						local_ip = select_local_ip_for_peer(peer_ip)
-						self.pending_offer = {
-							"peer_ip": peer_ip,
-							"peer_addr": addr,
-							"peer_media_port": int(msg["caller_media_port"]),
-							"local_ip": local_ip,
-						}
-						# Enviar resposta de "RINGING" para indicar que recebeu a chamada
-						ringing_response = {"type": "RINGING"}
-						sock.sendto(json.dumps(ringing_response).encode("utf-8"), addr)
+						with self._lock:
+							self.pending_offer = {
+								"peer_ip": peer_ip,
+								"peer_addr": addr,
+								"peer_media_port": int(msg["caller_media_port"]),
+								"local_ip": local_ip,
+							}
+						try:
+							# Enviar resposta de "RINGING" para indicar que recebeu a chamada
+							ringing_response = {"type": "RINGING"}
+							sock.sendto(json.dumps(ringing_response).encode("utf-8"), addr)
+							# Notificar que o estado mudou (nova oferta pendente)
+							if self._on_update:
+								self._on_update()
+						except Exception:
+							pass
 				except Exception:
 					pass
 			except Exception:
@@ -248,36 +257,42 @@ class ControlServer:
 		sock.close()
 
 	def accept_pending(self):
-		if not self.pending_offer:
-			return None
-		# abrir socket efêmero/porta para mídia
-		local_ip = self.pending_offer["local_ip"]
-		my_media_port = find_free_udp_port(local_ip)
-		response = {
-			"type": "ACCEPT",
-			"callee_media_port": my_media_port,
-		}
-		# enviar resposta
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sock.sendto(json.dumps(response).encode("utf-8"), self.pending_offer["peer_addr"])
-		sock.close()
-		accepted = {
-			"peer_ip": self.pending_offer["peer_ip"],
-			"peer_media_port": self.pending_offer["peer_media_port"],
-			"my_media_port": my_media_port,
-			"local_ip": local_ip,
-		}
-		self.pending_offer = None
+		with self._lock:
+			if not self.pending_offer:
+				return None
+			# abrir socket efêmero/porta para mídia
+			local_ip = self.pending_offer["local_ip"]
+			my_media_port = find_free_udp_port(local_ip)
+			response = {
+				"type": "ACCEPT",
+				"callee_media_port": my_media_port,
+			}
+			# enviar resposta
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.sendto(json.dumps(response).encode("utf-8"), self.pending_offer["peer_addr"])
+			sock.close()
+			accepted = {
+				"peer_ip": self.pending_offer["peer_ip"],
+				"peer_media_port": self.pending_offer["peer_media_port"],
+				"my_media_port": my_media_port,
+				"local_ip": local_ip,
+			}
+			self.pending_offer = None
+		if self._on_update:
+			self._on_update()
 		return accepted
 
 	def reject_pending(self):
-		if not self.pending_offer:
-			return False
-		rej = {"type": "REJECT"}
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sock.sendto(json.dumps(rej).encode("utf-8"), self.pending_offer["peer_addr"])
-		sock.close()
-		self.pending_offer = None
+		with self._lock:
+			if not self.pending_offer:
+				return False
+			rej = {"type": "REJECT"}
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.sendto(json.dumps(rej).encode("utf-8"), self.pending_offer["peer_addr"])
+			sock.close()
+			self.pending_offer = None
+		if self._on_update:
+			self._on_update()
 		return True
 
 
@@ -325,5 +340,3 @@ def initiate_call(peer_ip, peer_control_port, timeout_seconds=10.0):
 		"local_ip": local_ip,
 		"remote_media_port": response,
 	}
-
-
