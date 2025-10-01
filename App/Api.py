@@ -7,7 +7,7 @@ import queue
 
 class ApiServer:
 
-	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, trigger_discovery_fn=None, get_volume_fn=None, set_volume_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None, get_mic_level_fn=None, test_output_fn=None, get_selected_devices_fn=None, set_ui_state_fn=None, window_minimize_fn=None, window_maximize_fn=None, window_close_fn=None, window_resize_fn=None):
+	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, trigger_discovery_fn=None, get_volume_fn=None, set_volume_fn=None, toggle_mute_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None, get_mic_level_fn=None, test_output_fn=None, get_selected_devices_fn=None, set_ui_state_fn=None, window_minimize_fn=None, window_maximize_fn=None, window_close_fn=None, window_resize_fn=None):
 		self.host = host
 		self.port = port
 		self._thread = threading.Thread(target=self._run)
@@ -23,6 +23,7 @@ class ApiServer:
 		self._trigger_discovery = trigger_discovery_fn or (lambda: False)
 		self._get_volume = get_volume_fn or (lambda: {"input": 100, "output": 100})
 		self._set_volume = set_volume_fn or (lambda *_args, **_kwargs: False)
+		self._toggle_mute = toggle_mute_fn or (lambda *_: False)
 		self._devices_provider = devices_provider or (lambda: {"input": [], "output": []})
 		self._set_devices = set_devices_fn or (lambda *_: False)
 		self._get_username = get_username_fn or (lambda: "New User")
@@ -165,6 +166,17 @@ class ApiServer:
 			if not ok:
 				return jsonify({"error": "Invalid volume payload"}), 400
 			return jsonify(self._get_volume())
+		
+		@app.post('/mute')
+		def mute_toggle():
+			data = request.get_json(silent=True) or {}
+			mute_type = data.get('type') # 'input' or 'output'
+			is_muted = data.get('muted')
+			if mute_type not in ['input', 'output'] or is_muted is None:
+				return jsonify({"error": "Invalid payload"}), 400
+			
+			ok = self._toggle_mute(mute_type, is_muted)
+			return jsonify({"ok": ok})
 
 		@app.route('/volume', methods=['OPTIONS'])
 		def volume_options():

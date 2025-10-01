@@ -483,8 +483,20 @@ const MainScreen = ({ peers, onCall, activeCall, localInterfaces, selectedNetwor
       {/* Controls */}
       <div className="mt-auto">
         <div className="flex justify-center gap-4 mb-6">
-          <button onClick={() => setIsMuted(!isMuted)} className={`p-4 rounded-full transition-colors ${isMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'}`}>{isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}</button>
-          <button onClick={() => setIsDeafened(!isDeafened)} className={`p-4 rounded-full transition-colors ${isDeafened ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'}`}>{isDeafened ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}</button>
+          <button onClick={() => {
+            const newMutedState = !isMuted;
+            setIsMuted(newMutedState);
+            try { fetch(`${apiBase}/mute`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'input', muted: newMutedState }) }); } catch (e) {}
+          }} className={`p-4 rounded-full transition-colors ${isMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'}`}>
+            {isMuted ? <MicOff className="w-6 h-6 text-white" /> : <Mic className="w-6 h-6 text-white" />}
+          </button>
+          <button onClick={() => {
+            const newDeafenedState = !isDeafened;
+            setIsDeafened(newDeafenedState);
+            try { fetch(`${apiBase}/mute`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'output', muted: newDeafenedState }) }); } catch (e) {}
+          }} className={`p-4 rounded-full transition-colors ${isDeafened ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-500'}`}>
+            {isDeafened ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
+          </button>
         </div>
       </div>
     </div>
