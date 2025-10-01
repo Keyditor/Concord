@@ -145,6 +145,28 @@ class DiscoveryService:
 		except Exception:
 			pass
 
+	def trigger_beacon(self):
+		"""Envia um único beacon de descoberta imediatamente em todas as interfaces."""
+		try:
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+			
+			interfaces = get_local_ipv4_interfaces()
+			payload = {
+				"type": "BEACON", "id": self.self_id, "name": self.display_name,
+				"username": self.username, "control_port": self.control_port,
+				"nets": [i["network"] for i in interfaces],
+			}
+			message = json.dumps(payload).encode("utf-8")
+			
+			for iface in interfaces:
+				bcast = iface["broadcast"] or "255.255.255.255"
+				sock.sendto(message, (bcast, self.broadcast_port))
+			
+			sock.close()
+		except Exception:
+			pass
+
 	def _listen_loop(self):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -207,6 +229,7 @@ class ControlServer:
 		self.pending_offer = None
 		self._on_update = on_update
 		self._lock = threading.Lock()
+		self._sock = None # Manter referência ao socket
 
 	def start(self):
 		self._running = True
@@ -220,21 +243,22 @@ class ControlServer:
 			pass
 
 	def _serve(self):
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		sock.bind(("", self.control_port))
-		sock.settimeout(0.5)
+		self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		self._sock.bind(("", self.control_port))
+		self._sock.settimeout(0.5)
 		while self._running:
 			try:
-				data, addr = sock.recvfrom(2048)
+				data, addr = self._sock.recvfrom(2048)
 				peer_ip, peer_port = addr
 				try:
 					msg = json.loads(data.decode("utf-8"))
-					if msg.get("type") == "OFFER" and "caller_media_port" in msg:
+					if msg.get("type") == "OFFER" and "caller_media_port" in msg and "username" in msg:
 						# armazenar oferta para ação do usuário (aceitar/recusar)
 						local_ip = select_local_ip_for_peer(peer_ip)
 						with self._lock:
 							self.pending_offer = {
+								"peer_username": msg.get("username"),
 								"peer_ip": peer_ip,
 								"peer_addr": addr,
 								"peer_media_port": int(msg["caller_media_port"]),
@@ -243,7 +267,7 @@ class ControlServer:
 						try:
 							# Enviar resposta de "RINGING" para indicar que recebeu a chamada
 							ringing_response = {"type": "RINGING"}
-							sock.sendto(json.dumps(ringing_response).encode("utf-8"), addr)
+							self._sock.sendto(json.dumps(ringing_response).encode("utf-8"), addr)
 							# Notificar que o estado mudou (nova oferta pendente)
 							if self._on_update:
 								self._on_update()
@@ -254,7 +278,8 @@ class ControlServer:
 			except Exception:
 				# ignora erros transitórios
 				continue
-		sock.close()
+		if self._sock:
+			self._sock.close()
 
 	def accept_pending(self):
 		with self._lock:
@@ -267,10 +292,11 @@ class ControlServer:
 				"type": "ACCEPT",
 				"callee_media_port": my_media_port,
 			}
-			# enviar resposta
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.sendto(json.dumps(response).encode("utf-8"), self.pending_offer["peer_addr"])
-			sock.close()
+			# Enviar resposta usando o socket do servidor para maior confiabilidade
+			if self._sock:
+				self._sock.sendto(json.dumps(response).encode("utf-8"), self.pending_offer["peer_addr"])
+			else:
+				return None # Não é possível aceitar se o servidor não estiver rodando
 			accepted = {
 				"peer_ip": self.pending_offer["peer_ip"],
 				"peer_media_port": self.pending_offer["peer_media_port"],
@@ -287,22 +313,24 @@ class ControlServer:
 			if not self.pending_offer:
 				return False
 			rej = {"type": "REJECT"}
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.sendto(json.dumps(rej).encode("utf-8"), self.pending_offer["peer_addr"])
-			sock.close()
+			# Enviar resposta usando o socket do servidor
+			if self._sock:
+				self._sock.sendto(json.dumps(rej).encode("utf-8"), self.pending_offer["peer_addr"])
 			self.pending_offer = None
+
 		if self._on_update:
 			self._on_update()
 		return True
 
 
-def initiate_call(peer_ip, peer_control_port, timeout_seconds=10.0):
+def initiate_call(peer_ip, peer_control_port, my_username="User", timeout_seconds=10.0):
 	ctrl_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	ctrl_sock.settimeout(1.0)
 	local_ip = select_local_ip_for_peer(peer_ip)
 	my_media_port = find_free_udp_port(local_ip)
 	offer = {
 		"type": "OFFER",
+		"username": my_username,
 		"caller_media_port": my_media_port,
 	}
 	deadline = time.time() + timeout_seconds

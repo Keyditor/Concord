@@ -78,12 +78,18 @@ class VoipRoom:
 			try:
 				# Recebe dados UDP
 				data, addr = self.sock.recvfrom(CHUNK * 2)  # O buffer pode ser ajustado
+				# Verifica se é uma mensagem de controle (ex: HANGUP)
+				if len(data) < 100 and b'{"type":"HANGUP"}' in data:
+					logging.info("Recebida notificação de HANGUP. Encerrando a chamada.")
+					self.running = False # Sinaliza para as threads pararem
+					continue
+
 				# Aplica volume de saída
 				with self._vol_lock: # Garante que o lock seja liberado
 					output_vol = self._output_volume
 				if output_vol != 1.0:
 					try:
-						data = audioop.mul(data, 2, output_vol)
+						data = audioop.mul(data, 2, output_vol) # type: ignore
 					except audioop.error:
 						pass
 				# Reproduz o áudio recebido
@@ -99,6 +105,15 @@ class VoipRoom:
 		self.send_thread.start()
 		self.receive_thread.start()
 		print(f"VoIP iniciado. Recebendo em {self.LOCAL_IP}:{self.LOCAL_PORT} e enviando para {self.REMOTE_IP}:{self.REMOTE_PORT}.")
+
+	# Função para notificar o outro lado sobre o encerramento
+	def send_hangup_notification(self):
+		try:
+			message = b'{"type":"HANGUP"}'
+			self.sock.sendto(message, (self.REMOTE_IP, self.REMOTE_PORT))
+			logging.info("Enviada notificação de HANGUP.")
+		except Exception as e:
+			logging.error(f"Falha ao enviar notificação de HANGUP: {e}")
 
 	# Função para parar as threads e liberar recursos
 	def stop(self):

@@ -31,6 +31,8 @@ const VoiceChatApp = () => {
   const [outputDeviceList, setOutputDeviceList] = React.useState([]); // raw from API
   const [peers, setPeers] = React.useState([]);
   const [pendingOffer, setPendingOffer] = React.useState(null);
+  const [localInterfaces, setLocalInterfaces] = React.useState([]);
+  const [selectedNetwork, setSelectedNetwork] = React.useState('all');
   const apiBase = 'http://127.0.0.1:5001';
 
   const fetchVolume = async () => {
@@ -74,10 +76,11 @@ const VoiceChatApp = () => {
 
     // Subscribe to peer updates
     let peer_es;
+    const peerUrl = selectedNetwork === 'all' ? `${apiBase}/events/peers` : `${apiBase}/events/peers?network=${encodeURIComponent(selectedNetwork)}`;
     try {
-      peer_es = new EventSource(`${apiBase}/events/peers`);
+      peer_es = new EventSource(peerUrl);
       peer_es.onmessage = (ev) => {
-        try { const list = JSON.parse(ev.data); if (Array.isArray(list)) setPeers(list); } catch (e) {}
+        try { const list = JSON.parse(ev.data); if (Array.isArray(list)) { setPeers(list); } } catch (e) {}
       };
     } catch (e) {}
 
@@ -88,6 +91,7 @@ const VoiceChatApp = () => {
       status_es.onmessage = (ev) => {
         try {
           const data = JSON.parse(ev.data);
+          if (Array.isArray(data.interfaces)) setLocalInterfaces(data.interfaces);
           setPendingOffer(data.pending_offer || null);
           setActiveCall(data.in_call ? data.current_call : null);
         } catch (e) {}
@@ -96,7 +100,7 @@ const VoiceChatApp = () => {
 
     // Cleanup function to close connections when component unmounts or screen changes
     return () => { try { peer_es && peer_es.close(); status_es && status_es.close(); } catch (e) {} };
-  }, [currentScreen]);
+  }, [currentScreen, selectedNetwork]);
 
   // Mock audio devices - em um app real, você obteria isso via navigator.mediaDevices.enumerateDevices()
   const audioInputDevices = [
@@ -137,7 +141,26 @@ const VoiceChatApp = () => {
       {/* Left Panel - Peers */}
       <div className="w-1/2 p-6 border-r border-gray-600">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-light text-white">Peers</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-light text-white">Peers</h2>
+            {localInterfaces.length > 0 && (
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedNetwork}
+                  onChange={(e) => setSelectedNetwork(e.target.value)}
+                  className="bg-gray-700 text-white text-sm rounded px-2 py-1 border border-gray-600 focus:outline-none"
+                >
+                  <option value="all">All Networks</option>
+                  {localInterfaces.map(iface => (
+                    <option key={iface.network} value={iface.network}>{iface.network}</option>
+                  ))}
+                </select>
+                <button onClick={async () => { try { await fetch(`${apiBase}/peers/discover`, { method: 'POST' }); } catch (e) {} }} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors">
+                  Buscar
+                </button>
+              </div>
+            )}
+          </div>
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}

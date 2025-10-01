@@ -17,6 +17,40 @@ import sys
 import threading
 import webview
 
+def check_and_add_firewall_rule():
+    """Verifica e adiciona uma regra no Firewall do Windows para o aplicativo, se necessário."""
+    if platform.system() != "Windows":
+        return # Função específica para Windows
+
+    import subprocess
+    import ctypes
+
+    rule_name = "Concord P2P"
+    try:
+        # Verifica se a regra já existe
+        check_command = f'netsh advfirewall firewall show rule name="{rule_name}"'
+        subprocess.check_output(check_command, shell=True, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL)
+        # Se o comando acima não der erro, a regra existe.
+        return
+    except subprocess.CalledProcessError:
+        # A regra não existe, vamos criá-la.
+        print(f"Regra de firewall '{rule_name}' não encontrada. Tentando criar...")
+        try:
+            # Verifica se o processo tem privilégios de administrador
+            is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+            if not is_admin:
+                print("Permissão de administrador necessária. Solicitando...")
+                # Re-executa o script com privilégios de administrador
+                ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+                sys.exit(0) # Encerra o processo atual sem privilégios
+
+            # Adiciona a regra para o executável Python que está rodando o script
+            program_path = sys.executable
+            add_command = f'netsh advfirewall firewall add rule name="{rule_name}" dir=in action=allow program="{program_path}" enable=yes'
+            subprocess.check_call(add_command, shell=True)
+            print(f"Regra de firewall '{rule_name}' criada com sucesso.")
+        except Exception as e:
+            logging.error(f"Falha ao criar regra de firewall: {e}. Por favor, adicione manualmente uma regra de entrada para o aplicativo.")
 
 """
 Main sem ZeroTier: Descoberta via broadcast em todas as redes.
@@ -24,6 +58,9 @@ Main sem ZeroTier: Descoberta via broadcast em todas as redes.
 
 # Inicializar configurações
 settings = Settings.SettingsManager()
+
+# Verificar e configurar o firewall na primeira execução
+check_and_add_firewall_rule()
 
 # ---- Logging configuration ----
 try:
@@ -155,13 +192,23 @@ def api_status():
         "current_call": current_call.get("info") if current_call["room"] is not None else None,
     }
 
-def api_peers():
-    return discovery.get_peers()
+def api_peers(network_filter=None):
+    """Retorna a lista de peers, opcionalmente filtrada por rede."""
+    all_peers = discovery.get_peers()
+    if not network_filter or network_filter == 'all':
+        return all_peers
+    
+    try:
+        import ipaddress
+        net = ipaddress.ip_network(network_filter, strict=False)
+        return [p for p in all_peers if ipaddress.ip_address(p['ip']) in net]
+    except Exception:
+        return all_peers # Retorna todos em caso de erro no filtro
 
 def api_start_call(ip, ctrl_port):
     if current_call["room"] is not None:
         return False, "Already in call"
-    result = Discovery.initiate_call(ip, ctrl_port)
+    result = Discovery.initiate_call(ip, ctrl_port, my_username=username)
     if result is None:
         return False, "Peer rejected or no answer"
     room = Voip.VoipRoom(
@@ -226,12 +273,14 @@ def api_accept():
 
 def api_reject():
     ok = control.reject_pending()
+    api.publish_status_update() # Notifica o frontend que a oferta foi rejeitada
     return ok
 
 def api_hangup():
     if current_call["room"] is None:
         return False
     try:
+        current_call["room"].send_hangup_notification()
         current_call["room"].stop()
     finally:
         current_call["room"] = None
@@ -335,6 +384,7 @@ api = Api.ApiServer(
     accept_fn=api_accept,
     reject_fn=api_reject,
     hangup_fn=api_hangup,
+    trigger_discovery_fn=lambda: discovery.trigger_beacon() or True,
     get_volume_fn=api_get_volume,
     set_volume_fn=api_set_volume,
     devices_provider=lambda: settings.get_cached_devices(),

@@ -7,7 +7,7 @@ import queue
 
 class ApiServer:
 
-	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, get_volume_fn=None, set_volume_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None, get_mic_level_fn=None, test_output_fn=None, get_selected_devices_fn=None, set_ui_state_fn=None, window_minimize_fn=None, window_maximize_fn=None, window_close_fn=None, window_resize_fn=None):
+	def __init__(self, host, port, peers_provider, pending_provider, status_provider, start_call_fn, accept_fn, reject_fn, hangup_fn, trigger_discovery_fn=None, get_volume_fn=None, set_volume_fn=None, devices_provider=None, set_devices_fn=None, get_username_fn=None, set_username_fn=None, get_mic_level_fn=None, test_output_fn=None, get_selected_devices_fn=None, set_ui_state_fn=None, window_minimize_fn=None, window_maximize_fn=None, window_close_fn=None, window_resize_fn=None):
 		self.host = host
 		self.port = port
 		self._thread = threading.Thread(target=self._run)
@@ -20,6 +20,7 @@ class ApiServer:
 		self._accept = accept_fn
 		self._reject = reject_fn
 		self._hangup = hangup_fn
+		self._trigger_discovery = trigger_discovery_fn or (lambda: False)
 		self._get_volume = get_volume_fn or (lambda: {"input": 100, "output": 100})
 		self._set_volume = set_volume_fn or (lambda *_args, **_kwargs: False)
 		self._devices_provider = devices_provider or (lambda: {"input": [], "output": []})
@@ -58,12 +59,14 @@ class ApiServer:
 
 		@app.get('/events/peers')
 		def peers_events():
+			# Filtra por rede se o parâmetro 'network' for fornecido
+			network_filter = request.args.get('network')
 			q = queue.Queue()
 			self._peer_event_subs.append(q)
 			def stream():
 				try:
 					while True:
-						data = q.get()
+						data = self._peers_provider(network_filter) if network_filter else q.get()
 						yield f"data: {data}\n\n"
 				except GeneratorExit:
 					pass
@@ -73,7 +76,7 @@ class ApiServer:
 					except Exception:
 						pass
 			return Response(stream(), mimetype='text/event-stream')
-
+		
 		@app.get('/events/status')
 		def status_events():
 			q = queue.Queue()
@@ -93,6 +96,11 @@ class ApiServer:
 					except Exception:
 						pass
 			return Response(stream(), mimetype='text/event-stream')
+
+		@app.post('/peers/discover')
+		def discover_peers():
+			ok = self._trigger_discovery()
+			return jsonify({"ok": bool(ok)})
 
 		@app.post('/call')
 		def call():
