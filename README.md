@@ -1,37 +1,47 @@
 <p align="center">
-<img alt="Concord Logo" src="logo.png" width="240" height="240"/>
+<img alt="Spea-K Logo" src="App/logo.png" width="240" height="240"/>
 </p>
 
-# Concord
+# Spea-K (Concord)
 
 ## 📜 Sobre o Projeto
-Este projeto é uma aplicação Python para comunicação por voz ponto a ponto (P2P) que combina o uso da tecnologia ZeroTier para criar uma rede privada virtual (VPN) e um sistema de gerenciamento de salas. A ideia central é permitir que clientes conectem-se diretamente uns aos outros de maneira segura e eficiente, utilizando um ID de sala compartilhado para organizar e facilitar as conexões.
+Este projeto é uma aplicação de chat por voz (VoIP) ponto a ponto (P2P) para redes locais. Ele foi projetado para ser simples e não depender de servidores centrais para a comunicação. A descoberta de outros usuários na rede é feita automaticamente, e a interface é uma aplicação web moderna renderizada em uma janela de desktop.
 
 ---
 
 ## 🚀 Principais Funcionalidades
-1. **Conexão com ZeroTier**:
-   - Criação de uma rede VPN utilizando o ZeroTier para facilitar a comunicação direta entre os dispositivos.
-   - Gerenciamento automático de conexões à rede ZeroTier, incluindo obtenção de IPs privados para comunicação.
+1. **Comunicação por Voz P2P**:
+   - Chamadas de áudio diretas entre dois usuários na mesma rede, sem passar por um servidor.
 
-2. **Gerenciamento de Salas**:
-   - Sistema de criação e entrada em salas com base em IDs.
-   - O primeiro cliente que tenta entrar em uma sala automaticamente cria a sala, permitindo que outros usuários se juntem ao grupo.
-   - Lista de peers conectados na mesma sala para facilitar a troca de informações entre clientes.
+2. **Descoberta Automática de Peers**:
+   - Utiliza pacotes de broadcast UDP para encontrar outros usuários na rede local automaticamente. Não é necessário inserir IPs manualmente.
 
-3. **Base para Comunicação P2P**:
-   - Estrutura pronta para implementar troca de dados (como voz) diretamente entre os clientes.
+3. **Interface Web Moderna**:
+   - A interface do usuário é construída com React e renderizada dentro de uma janela nativa usando `pywebview`, combinando a flexibilidade da web com a experiência de um aplicativo de desktop.
+
+4. **Atualizações em Tempo Real**:
+   - A lista de peers e o status das chamadas são atualizados instantaneamente através de Server-Sent Events (SSE), proporcionando uma experiência fluida.
+
+5. **Gerenciamento de Áudio**:
+   - Permite selecionar dispositivos de entrada e saída, testar o microfone e o áudio, e ajustar os volumes.
+
+6. **Integração com Firewall do Windows**:
+   - Na primeira execução, o aplicativo solicita permissão de administrador para criar uma regra no Firewall do Windows, garantindo que a descoberta de peers funcione corretamente.
 
 ---
 
 ## 📂 Estrutura do Projeto
 ```plaintext
 📁 Concord
-├── README.md            # Documentação do projeto
-├── main.py              # Arquivo principal para inicializar o programa
-├── zerotier_manager.py  # Módulo de gerenciamento de ZeroTier
-├── room_manager.py      # Módulo de gerenciamento de salas
-└── requirements.txt     # Dependências do projeto
+└── 📁 App
+    ├── Main.py              # Ponto de entrada, orquestra todos os componentes
+    ├── Discovery.py         # Lógica de descoberta de peers e sinalização de chamadas
+    ├── Voip.py              # Gerencia o stream de áudio P2P durante uma chamada
+    ├── Api.py               # API Flask que serve como ponte entre o backend e o frontend
+    ├── Settings.py          # Gerencia as configurações do usuário em um banco de dados SQLite
+    ├── front.tsx            # Componente React para a tela principal
+    ├── settings.tsx         # Componente React para a tela de configurações
+    └── ...                  # Outros arquivos de frontend e recursos
 ```
 
 ## 📦 Instalação e Configuração
